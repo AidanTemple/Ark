@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Files>
+  <XAPFiles>
+    <File>resources.pri</File>
+    <File>Ark.dll</File>
+    <File>Assets\BadgeLogo.png</File>
+    <File>Assets\Logo.png</File>
+    <File>Assets\SplashScreen.png</File>
+    <File>Assets\SquareTile150x150.png</File>
+    <File>Assets\SquareTile71x71.png</File>
+    <File>Assets\StoreLogo.png</File>
+    <File>Assets\WideLogo.png</File>
+    <File>Content\Fonts\menu.xnb</File>
+    <File>Content\Textures\blank.xnb</File>
+    <File>Content\Textures\MenuBackground.xnb</File>
+    <File>Content\Textures\Player.xnb</File>
+    <File>Content\Textures\Backgrounds\background1.xnb</File>
+    <File>Content\Textures\Backgrounds\background2.xnb</File>
+    <File>Content\Textures\Backgrounds\background3.xnb</File>
+    <File>Content\Textures\Backgrounds\background4.xnb</File>
+    <File>Content\Textures\Missile.xnb</File>
+    <File>Content\Textures\Pulse.xnb</File>
+    <File>Content\Textures\Torpedo.xnb</File>
+    <File>Content\Textures\Enemy_Large.xnb</File>
+    <File>Content\Textures\Enemy_Normal.xnb</File>
+    <File>Content\Textures\LineParticle.xnb</File>
+    <File>Content\Textures\StatusBar.xnb</File>
+    <File>Content\Fonts\game0.xnb</File>
+    <File>Content\Fonts\intro.xnb</File>
+    <File>Content\Fonts\largeFont.xnb</File>
+    <File>Content\Fonts\mediumFont.xnb</File>
+    <File>Content\Fonts\smallFont.xnb</File>
+    <File>Assets\AlignmentGrid.png</File>
+    <File>Assets\Tiles\FlipCycleTileLarge.png</File>
+    <File>Assets\Tiles\FlipCycleTileSmall.png</File>
+    <File>Assets\Tiles\IconicTileMediumLarge.png</File>
+    <File>Assets\Tiles\IconicTileSmall.png</File>
+    <File>AppManifest.xaml</File>
+    <File>Assets\ApplicationIcon.png</File>
+    <File>Assets\Tiles\FlipCycleTileMedium.png</File>
+    <File>FlurryWP8SDK.dll</File>
+    <File>MonoGame.Framework.dll</File>
+    <File>SharpDX.dll</File>
+    <File>SharpDX.Direct3D11.dll</File>
+    <File>SharpDX.XAudio2.dll</File>
+    <File>SharpDX.DXGI.dll</File>
+    <File>SharpDX.WP8.winmd</File>
+    <File>SharpDX.xml</File>
+    <File>SharpDX.Direct3D11.xml</File>
+    <File>SharpDX.XAudio2.xml</File>
+    <File>SharpDX.DXGI.xml</File>
+    <File>SharpDX.WP8.dll</File>
+    <File>WMAppManifest.xml</File>
+    <File>AppxManifest.xml</File>
+  </XAPFiles>
+  <APPXFiles />
+</Files>
