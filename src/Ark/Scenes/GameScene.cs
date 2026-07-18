@@ -22,8 +22,6 @@ namespace Ark
 
         private Countdown m_Countdown;
 
-        private bool IsPaused;
-
         #endregion
 
         #region Properties
@@ -38,13 +36,18 @@ namespace Ark
         {
             TransitionOnTime = TimeSpan.FromSeconds(1.5);
             TransitionOffTime = TimeSpan.FromSeconds(0.5);
-
-            IsPaused = false;
         }
 
         public override void LoadContent()
         {
             SceneManager.Game.ResetElapsedTime();
+
+            Reset();
+        }
+
+        private void Reset()
+        {
+            GameVariables.Score = 0;
 
             m_Background = new Background(SceneManager.GraphicsDevice);
 
@@ -72,53 +75,37 @@ namespace Ark
         {
             base.Update(gameTime, hasFocus, coveredByOtherScreen);
 
-            if (IsPaused)
-            {
+            m_Background.Update(gameTime);
+            m_Countdown.Update(gameTime);
 
-            }
-            else
+            if (!m_Countdown.IsCountingDown)
             {
-                m_Background.Update(gameTime);
-                m_Countdown.Update(gameTime);
+                HandleCollisions();
 
-                if (!m_Countdown.IsCountingDown)
+                m_Player.Update(gameTime);
+
+                m_WaveManager.Update(gameTime);
+
+                Particle.Update();
+
+                m_HealthBar.Percent = m_Player.Health;
+                m_HealthBar.Update();
+
+                if (m_Player.Health <= 0 && m_Player.IsAlive)
                 {
-                    HandleCollisions();
+                    Reset();
+                }
 
-                    m_Player.Update(gameTime);
-
-                    m_WaveManager.Update(gameTime);
-
-                    Particle.Update();
-
-                    m_HealthBar.Percent = m_Player.Health;
-                    m_HealthBar.Update();
-
-                    if (m_Player.Health <= 0 && m_Player.IsAlive)
+                foreach (Enemy enemy in m_WaveManager.Enemies)
+                {
+                    if (enemy.IsAlive)
                     {
-                        m_Player.IsAlive = false;
-
-                        Vector2 position = new Vector2((int)m_Player.Position.X - (int)m_Player.Origin.X,
-                                    (int)m_Player.Position.Y - (int)m_Player.Origin.Y);
-
-                        RemoveEntity(m_Player.Width, m_Player.Height, position, 200,
-                            Color.DeepSkyBlue, Color.DarkBlue, 100, ParticleType.Player);
-
-                        SceneManager.RemoveScene(this);
-                        SceneManager.AddScene(new MenuScene(), ControllingPlayer);
-                    }
-
-                    foreach (Enemy enemy in m_WaveManager.Enemies)
-                    {
-                        if (enemy.IsAlive)
+                        if (m_Player.IsAlive && enemy.IsInRange(m_Player.Position))
                         {
-                            if (m_Player.IsAlive && enemy.IsInRange(m_Player.Position))
+                            if (m_Player.Position.X > enemy.Position.X - enemy.Origin.X
+                                && m_Player.Position.X < enemy.Position.X + enemy.Origin.X)
                             {
-                                if (m_Player.Position.X > enemy.Position.X - enemy.Origin.X
-                                    && m_Player.Position.X < enemy.Position.X + enemy.Origin.X)
-                                {
-                                    enemy.FireLaser();
-                                }
+                                enemy.FireLaser();
                             }
                         }
                     }
@@ -130,29 +117,12 @@ namespace Ark
         {
             if(input != null)
             {
-                int playerIndex = (int)ControllingPlayer.Value;
-
-                KeyboardState keyboardState = input.m_CurrentKeyboardStates[playerIndex];
-                GamePadState gamePadState = input.m_CurrentGamePadStates[playerIndex];
-
                 PlayerIndex player;
 
-                if(IsPaused)
+                if (input.IsNewButtonPress(Buttons.Back, ControllingPlayer, out player))
                 {
-                    if (input.IsNewButtonPress(Buttons.Back, ControllingPlayer, out player))
-                    {
-                        SceneManager.RemoveScene(this);
-                        SceneManager.AddScene(new MenuScene(), ControllingPlayer);
-                    }
-                }
-                else
-                {
-#if DEBUG
-                    if (input.IsNewButtonPress(Buttons.Back, ControllingPlayer, out player))
-                    {
-                        IsPaused = true;
-                    }
-#endif
+                    SceneManager.RemoveScene(this);
+                    SceneManager.AddScene(new MenuScene(), ControllingPlayer);
                 }
             }
         }
