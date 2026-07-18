@@ -1,5 +1,4 @@
 #region Using Statements
-using Microsoft.Phone.Shell;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
@@ -28,13 +27,17 @@ namespace Ark
             m_Graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
 
-            // Set resoultion of our game and put it into fullscreen
+            // Fixed-size windowed 480x800 canvas -- matches the game's original
+            // resolution, which all gameplay/UI coordinates are hardcoded around.
             this.m_Graphics.PreferredBackBufferWidth = 480;
             this.m_Graphics.PreferredBackBufferHeight = 800;
-            this.m_Graphics.IsFullScreen = true;
+            this.m_Graphics.IsFullScreen = false;
             this.m_Graphics.ApplyChanges();
 
-            // Frame rate is 30 fps by default for Windows Phone
+            Window.AllowUserResizing = false;
+
+            // Capped at 30fps; EnemySpeed, PlayerSpeed, wave timing, etc. were
+            // tuned around this tick rate -- revisit together if raising it.
             TargetElapsedTime = TimeSpan.FromTicks(333333);
 
             // Extend battery life under lock

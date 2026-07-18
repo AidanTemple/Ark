@@ -61,10 +61,6 @@ namespace Ark
 
         public virtual void Update(Menu scene, bool selected, GameTime gameTime)
         {
-#if WINDOWS_PHONE
-            selected = false;
-#endif
-
             float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds * 4;
 
             if(selected)
@@ -83,9 +79,6 @@ namespace Ark
 
         public virtual void Draw(Menu scene, bool selected, GameTime gameTime)
         {
-#if WINDOWS_PHONE
-            selected = false;
-#endif
             Color color;
 
             if (selected)

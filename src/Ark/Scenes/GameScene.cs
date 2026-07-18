@@ -2,7 +2,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.Input.Touch;
 using System;
 #endregion
 
@@ -37,8 +36,6 @@ namespace Ark
 
         public GameScene()
         {
-            EnabledGestures = GestureType.Tap | GestureType.FreeDrag;
-
             TransitionOnTime = TimeSpan.FromSeconds(2.0);
             TransitionOffTime = TimeSpan.FromSeconds(0.5);
 
@@ -154,10 +151,6 @@ namespace Ark
                         IsPaused = true;
                     }
 #endif
-                    if (!m_Countdown.IsCountingDown)
-                    {
-                        m_Player.UpdateInput(input);
-                    }
                 }
             }
         }

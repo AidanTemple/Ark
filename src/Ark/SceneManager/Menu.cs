@@ -2,7 +2,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.Input.Touch;
 using System;
 using System.Collections.Generic;
 #endregion
@@ -35,8 +34,6 @@ namespace Ark
 
         public Menu()
         {
-            EnabledGestures = GestureType.Tap;
-
             TransitionOnTime = TimeSpan.FromSeconds(0.5);
             TransitionOffTime = TimeSpan.FromSeconds(0);
 
@@ -106,38 +103,35 @@ namespace Ark
 
         #region Helper Methods
 
-        protected virtual Rectangle GetMenuEntryHitBounds(MenuEntry entry)
-        {
-            return new Rectangle(0, (int)entry.Position.Y - m_Padding,
-                SceneManager.GraphicsDevice.Viewport.Width,
-                entry.GetHeight(this) + (m_Padding * 2));
-        }
-
         public override void UpdateInput(InputState input)
         {
-            PlayerIndex player;
+            if (m_Entries.Count == 0)
+                return;
 
-            if (input.IsNewButtonPress(Buttons.Back, ControllingPlayer, out player))
+            if (input.IsMenuUp(ControllingPlayer))
             {
-                OnCancel(player);
+                m_Index--;
+
+                if (m_Index < 0)
+                    m_Index = m_Entries.Count - 1;
+            }
+            else if (input.IsMenuDown(ControllingPlayer))
+            {
+                m_Index++;
+
+                if (m_Index >= m_Entries.Count)
+                    m_Index = 0;
             }
 
-            foreach(GestureSample gesture in input.m_Gestures)
+            PlayerIndex player;
+
+            if (input.IsMenuSelect(ControllingPlayer, out player))
             {
-                if(gesture.GestureType == GestureType.Tap)
-                {
-                    Point tap = new Point((int)gesture.Position.X, (int)gesture.Position.Y);
-
-                    for(int i = 0; i < m_Entries.Count; i++)
-                    {
-                        MenuEntry entry = MenuEntries[i];
-
-                        if(GetMenuEntryHitBounds(entry).Contains(tap))
-                        {
-                            OnSelectEntry(i, PlayerIndex.One);
-                        }
-                    }
-                }
+                OnSelectEntry(m_Index, player);
+            }
+            else if (input.IsMenuCancel(ControllingPlayer, out player))
+            {
+                OnCancel(player);
             }
         }
 
