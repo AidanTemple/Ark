@@ -69,8 +69,8 @@ namespace Ark
 
         private void AddEnemy()
         {
-            int x = m_Random.Next(30, 450);
-            int y = m_Random.Next(-30, -10);
+            int x = m_Random.Next(GameVariables.EnemySpawnMinX, GameVariables.EnemySpawnMaxX);
+            int y = m_Random.Next(GameVariables.EnemySpawnMinY, GameVariables.EnemySpawnMaxY);
 
             Enemy enemy = new Enemy(m_GraphicsDevice, new Vector2(x, y), 1, GameVariables.EnemySpeed);
             m_Enemies.Add(enemy);

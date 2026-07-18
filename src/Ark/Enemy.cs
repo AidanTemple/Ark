@@ -42,7 +42,15 @@ namespace Ark
         public float CurrentHealth
         {
             get { return m_CurrentHealth; }
-            set { m_CurrentHealth = value;  }
+            set
+            {
+                m_CurrentHealth = value;
+
+                if (m_CurrentHealth <= 0)
+                {
+                    IsAlive = false;
+                }
+            }
         }
 
         public Rectangle BoundingRect
@@ -124,11 +132,6 @@ namespace Ark
 
         public override void Update(GameTime gameTime)
         {
-            if(m_CurrentHealth <= 0)
-            {
-                IsAlive = false;
-            }
-
             m_BoundingRect.X = (int)Position.X - (int)Origin.X;
             m_BoundingRect.Y = (int)Position.Y - (int)Origin.Y;
 
@@ -142,8 +145,8 @@ namespace Ark
 
             if(this.Position.Y > 800)
             {
-                this.Position.X = Extensions.Random.Next(30, 450);
-                this.Position.Y = Extensions.Random.Next(-30, -10);
+                this.Position.X = Extensions.Random.Next(GameVariables.EnemySpawnMinX, GameVariables.EnemySpawnMaxX);
+                this.Position.Y = Extensions.Random.Next(GameVariables.EnemySpawnMinY, GameVariables.EnemySpawnMaxY);
             }
         }
 

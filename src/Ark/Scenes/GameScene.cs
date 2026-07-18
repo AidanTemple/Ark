@@ -169,7 +169,7 @@ namespace Ark
             {
                 foreach (Enemy enemy in m_WaveManager.Enemies)
                 {
-                    if (missile.IsAlive && enemy.CurrentHealth > 0 && missile.BoundingRect.Intersects(enemy.BoundingRect))
+                    if (missile.IsAlive && enemy.IsAlive && missile.BoundingRect.Intersects(enemy.BoundingRect))
                     {
                         missile.IsAlive = false;
                             

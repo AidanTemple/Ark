@@ -9,5 +9,10 @@
         public static float BackgroundScrollSpeed = 30.0f;
         public static float LaserDamage = 0.5f;
         public static float MissileDamage = 5.0f;
+
+        public static int EnemySpawnMinX = 30;
+        public static int EnemySpawnMaxX = 450;
+        public static int EnemySpawnMinY = -30;
+        public static int EnemySpawnMaxY = -10;
     }
 }
