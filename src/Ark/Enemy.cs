@@ -142,7 +142,8 @@ namespace Ark
 
             if(this.Position.Y > 800)
             {
-                this.Position.Y = -30;
+                this.Position.X = Extensions.Random.Next(30, 450);
+                this.Position.Y = Extensions.Random.Next(-30, -10);
             }
         }
 
@@ -194,14 +195,14 @@ namespace Ark
         {
             if (m_LaserTime >= m_FireInterval)
             {
-                for (int i = 0; i < 2; i++)
+                for (int i = 0; i < m_MaxLasers; i++)
                 {
                     if (!m_Lasers[i].IsAlive)
                     {
                         m_Lasers[i].IsAlive = true;
                         m_Lasers[i].Velocity = new Vector2(0, 10);
 
-                        if (i == 1)
+                        if (i % 2 == 1)
                         {
                             m_Lasers[i].Position = new Vector2(this.Position.X + 14, this.Position.Y + 10);
                         }
@@ -210,11 +211,11 @@ namespace Ark
                             m_Lasers[i].Position = new Vector2(this.Position.X - 15, this.Position.Y + 3);
                         }
 
+                        m_LaserTime = 0;
+
                         return;
                     }
                 }
-
-                m_LaserTime = 0;
             }
         }
 

@@ -111,19 +111,8 @@ namespace Ark
                 Enemy enemy = m_Enemies[i];
                 enemy.Update(gameTime);
 
-                if(enemy.Position.Y > m_GraphicsDevice.Viewport.Height)
-                {
-                    enemy.Position.X = m_Random.Next(30, 450);
-                    enemy.Position.Y = m_Random.Next(-30, -10);
-                }
-
                 if(enemy.IsDead)
                 {
-                    if(enemy.CurrentHealth > 0)
-                    {
-                        m_HasReachedEnd = true;
-                    }
-
                     m_Enemies.Remove(enemy);
                     i--;
                 }
