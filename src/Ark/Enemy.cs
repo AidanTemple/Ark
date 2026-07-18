@@ -143,7 +143,7 @@ namespace Ark
         {
             this.Position.Y += m_Speed;
 
-            if(this.Position.Y > 800)
+            if(this.Position.Y > m_ViewportRect.Height)
             {
                 this.Position.X = Extensions.Random.Next(GameVariables.EnemySpawnMinX, GameVariables.EnemySpawnMaxX);
                 this.Position.Y = Extensions.Random.Next(GameVariables.EnemySpawnMinY, GameVariables.EnemySpawnMaxY);
@@ -185,8 +185,6 @@ namespace Ark
 
                 spriteBatch.Draw(Texture, Position, null, Color.White, Rotation,
                     Origin, Scale, SpriteEffects.None, Depth);
-
-                base.Draw(spriteBatch);
             }
         }
 

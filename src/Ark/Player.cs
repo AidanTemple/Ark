@@ -178,8 +178,6 @@ namespace Ark
 
                 foreach (Missile missile in m_Missiles)
                     missile.Draw(spriteBatch);
-
-                base.Draw(spriteBatch);
             }
         }
 
