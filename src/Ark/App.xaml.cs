@@ -61,16 +61,12 @@ namespace Ark
         // This code will not execute when the application is reactivated
         private void Application_Launching(object sender, LaunchingEventArgs e)
         {
-            // Flurry API key
-            FlurryWP8SDK.Api.StartSession("7ZR9JNQRBZQ9D28WVSB8");
         }
 
         // Code to execute when the application is activated (brought to foreground)
         // This code will not execute when the application is first launched
         private void Application_Activated(object sender, ActivatedEventArgs e)
         {
-            // Flurry API key
-            FlurryWP8SDK.Api.StartSession("7ZR9JNQRBZQ9D28WVSB8");
         }
 
         // Code to execute when the application is deactivated (sent to background)
