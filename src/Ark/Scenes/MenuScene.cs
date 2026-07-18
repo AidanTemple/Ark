@@ -17,15 +17,12 @@ namespace Ark
             TransitionOffTime = TimeSpan.FromSeconds(0);
 
             MenuEntry GameMenuEntry = new MenuEntry("New Game");
-            MenuEntry ControlMenuEntry = new MenuEntry("Controls");
             MenuEntry ExitMenuEntry = new MenuEntry("Exit");
 
             GameMenuEntry.Selected += GameMenuEntrySelected;
-            ControlMenuEntry.Selected += ControlMenuEntrySelected;
             ExitMenuEntry.Selected += ExitMenuEntrySelected;
 
             MenuEntries.Add(GameMenuEntry);
-            MenuEntries.Add(ControlMenuEntry);
             MenuEntries.Add(ExitMenuEntry);
         }
 
@@ -35,12 +32,8 @@ namespace Ark
 
         private void GameMenuEntrySelected(object sender, PlayerIndexEventArgs e)
         {
-            LoadScene.Load(SceneManager, true, e.PlayerIndex, new GameScene());
-        }
-
-        private void ControlMenuEntrySelected(object sender, PlayerIndexEventArgs e)
-        {
-            LoadScene.Load(SceneManager, false, e.PlayerIndex, new ControlScene());
+            SceneManager.RemoveScene(this);
+            SceneManager.AddScene(new GameScene(), e.PlayerIndex);
         }
 
         private void ExitMenuEntrySelected(object sender, PlayerIndexEventArgs e)

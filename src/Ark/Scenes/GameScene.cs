@@ -104,7 +104,8 @@ namespace Ark
                         RemoveEntity(m_Player.Width, m_Player.Height, position, 200,
                             Color.DeepSkyBlue, Color.DarkBlue, 100, ParticleType.Player);
 
-                        LoadScene.Load(SceneManager, false, ControllingPlayer, new StatScene());
+                        SceneManager.RemoveScene(this);
+                        SceneManager.AddScene(new MenuScene(), ControllingPlayer);
                     }
 
                     foreach (Enemy enemy in m_WaveManager.Enemies)
@@ -140,7 +141,8 @@ namespace Ark
                 {
                     if (input.IsNewButtonPress(Buttons.Back, ControllingPlayer, out player))
                     {
-                        LoadScene.Load(SceneManager, true, ControllingPlayer, new MenuScene());
+                        SceneManager.RemoveScene(this);
+                        SceneManager.AddScene(new MenuScene(), ControllingPlayer);
                     }
                 }
                 else

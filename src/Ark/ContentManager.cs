@@ -11,8 +11,6 @@ namespace Ark
         public static Texture2D MonoTexture { get; private set; }
         public static Texture2D NanoTexture { get; private set; }
         public static Texture2D MenuBackground { get; private set; }
-        public static Texture2D ControlTexture { get; private set; }
-        public static Texture2D StatTexture { get; private set; }
         public static Texture2D BlankTexture { get; private set; }
         public static Texture2D Player { get; private set; }
         public static Texture2D Background_001 { get; private set; }
@@ -47,8 +45,6 @@ namespace Ark
             MonoTexture         = Content.Load<Texture2D>("Textures/MonoTexture");
             NanoTexture         = Content.Load<Texture2D>("Textures/NanoTexture");
             MenuBackground      = Content.Load<Texture2D>("Textures/MenuBackground");
-            ControlTexture      = Content.Load<Texture2D>("Textures/backgrounds/Controls");
-            StatTexture         = Content.Load<Texture2D>("Textures/Backgrounds/GameOver");
             BlankTexture        = Content.Load<Texture2D>("Textures/blank");
             Player              = Content.Load<Texture2D>("Textures/Player");
             Background_001      = Content.Load<Texture2D>("Textures/Backgrounds/background1");
