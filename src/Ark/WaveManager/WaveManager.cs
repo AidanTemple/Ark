@@ -32,12 +32,12 @@ namespace Ark
 
         public List<Enemy> Enemies
         {
-            get { return CurrentWave.Enemies; }
+            get { return m_Waves.Count > 0 ? CurrentWave.Enemies : new List<Enemy>(); }
         }
 
         public int WaveNumber
         {
-            get { return CurrentWave.WaveNumber + 1; }
+            get { return m_Waves.Count > 0 ? CurrentWave.WaveNumber + 1 : m_WaveCount; }
         }
 
         public bool IsNewWave { get; set; }
@@ -92,6 +92,11 @@ namespace Ark
 
         public void Update(GameTime gameTime)
         {
+            if (m_Waves.Count == 0)
+            {
+                return;
+            }
+
             CurrentWave.Update(gameTime);
 
             if(CurrentWave.IsWaveComplete)
@@ -119,6 +124,11 @@ namespace Ark
 
         public void Draw(SpriteBatch spriteBatch)
         {
+            if (m_Waves.Count == 0)
+            {
+                return;
+            }
+
             CurrentWave.Draw(spriteBatch);
 
             if (m_WaveCounter.IsWaveCounterEnabled)
