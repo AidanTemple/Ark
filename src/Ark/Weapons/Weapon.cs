@@ -82,7 +82,7 @@ namespace Ark
 
                 projectile.Update(gameTime);
 
-                if (!viewportBounds.Contains(new Point((int)projectile.Position.X, (int)projectile.Position.Y)))
+                if (Physics.IsOutOfBounds(projectile.Position, viewportBounds))
                 {
                     projectile.IsAlive = false;
                     continue;

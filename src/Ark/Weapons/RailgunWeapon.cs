@@ -54,7 +54,7 @@ namespace Ark
                     continue;
                 }
 
-                if (!railgun.BoundingRect.Intersects(enemy.BoundingRect))
+                if (!Physics.Overlaps(railgun.BoundingRect, enemy.BoundingRect))
                 {
                     continue;
                 }

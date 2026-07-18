@@ -167,8 +167,7 @@ namespace Ark
 
                 if(m_Lasers[i].IsAlive)
                 {
-                    if (!m_ViewportRect.Contains(new Point((int)m_Lasers[i].Position.X,
-                        (int)m_Lasers[i].Position.Y)))
+                    if (Physics.IsOutOfBounds(m_Lasers[i].Position, m_ViewportRect))
                     {
                         m_Lasers[i].IsAlive = false;
                         continue;
@@ -229,7 +228,7 @@ namespace Ark
 
         public bool IsInRange(Vector2 position)
         {
-            return Vector2.Distance(m_Center, position) <= m_Radius;
+            return Physics.IsWithinRadius(m_Center, position, m_Radius);
         }
 
         #endregion

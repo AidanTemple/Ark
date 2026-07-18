@@ -66,20 +66,11 @@ namespace Ark
                     continue;
                 }
 
-                float distance = Vector2.Distance(enemy.Position, bomb.Position);
-
-                if (distance <= GameVariables.GravityBombPullRadius)
+                if (Physics.IsWithinRadius(enemy.Position, bomb.Position, GameVariables.GravityBombPullRadius))
                 {
                     enemy.IsBeingPulled = true;
 
-                    Vector2 toBomb = bomb.Position - enemy.Position;
-
-                    if (toBomb.LengthSquared() > 0.01f)
-                    {
-                        toBomb.Normalize();
-                    }
-
-                    enemy.Position += toBomb * GameVariables.GravityBombPullSpeed;
+                    enemy.Position += Physics.CalculatePullStep(enemy.Position, bomb.Position, GameVariables.GravityBombPullSpeed);
                 }
                 else
                 {
@@ -101,9 +92,7 @@ namespace Ark
 
                 enemy.IsBeingPulled = false;
 
-                float distance = Vector2.Distance(enemy.Position, bomb.Position);
-
-                if (distance <= GameVariables.GravityBombDetonateRadius)
+                if (Physics.IsWithinRadius(enemy.Position, bomb.Position, GameVariables.GravityBombDetonateRadius))
                 {
                     enemy.CurrentHealth -= Damage;
                     GameVariables.Score += 1;

@@ -42,7 +42,7 @@ namespace Ark
         {
             foreach (Enemy enemy in enemies)
             {
-                if (enemy.IsAlive && projectile.BoundingRect.Intersects(enemy.BoundingRect))
+                if (enemy.IsAlive && Physics.Overlaps(projectile.BoundingRect, enemy.BoundingRect))
                 {
                     projectile.IsAlive = false;
 

@@ -164,7 +164,7 @@ namespace Ark
 
                     foreach (Player player in m_Players)
                     {
-                        if (laser.BoundingRect.Intersects(player.BoundingRect))
+                        if (Physics.Overlaps(laser.BoundingRect, player.BoundingRect))
                         {
                             laser.IsAlive = false;
                             player.Health -= laser.Damage;

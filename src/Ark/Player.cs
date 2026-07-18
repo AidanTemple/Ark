@@ -92,10 +92,7 @@ namespace Ark
         {
             UpdateGamePad(gameTime);
 
-            Position.X = (int)MathHelper.Clamp(Position.X, m_Viewport.X + (Width / 2),
-                m_Viewport.Width - (Width / 2));
-            Position.Y = (int)MathHelper.Clamp(Position.Y, m_Viewport.Y + (Height / 2),
-                m_Viewport.Height - (Height / 2));
+            Position = Physics.ClampToBounds(Position, m_ViewportRect, Width / 2, Height / 2);
 
             m_BoundingRect.X = (int)Position.X - (int)Origin.X;
             m_BoundingRect.Y = (int)Position.Y - (int)Origin.Y;
