@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
+using System.Collections.Generic;
 #endregion
 
 namespace Ark
@@ -12,7 +13,7 @@ namespace Ark
         #region Private Members
 
         private Background m_Background;
-        private Player m_Player;
+        private List<Player> m_Players;
 
         private WaveManager m_WaveManager;
 
@@ -51,11 +52,17 @@ namespace Ark
 
             m_Countdown = new Countdown();
 
-            m_Player = new Player(SceneManager.GraphicsDevice);
+            // A single-element list for now -- Player itself no longer hardcodes
+            // PlayerIndex.One (it listens to whichever controller is passed in),
+            // so a second entry here is all a future local co-op player would need
+            // at the input level. Death handling and the health bar below are still
+            // single-player-shaped by design; see the comments at their call sites.
+            m_Players = new List<Player> { new Player(SceneManager.GraphicsDevice, ControllingPlayer ?? PlayerIndex.One) };
+
             m_WaveManager = new WaveManager(SceneManager.GraphicsDevice, ContentManager.Enemy, 24);
 
             m_HealthBar = new StatusBar();
-            m_HealthBar.Percent = m_Player.Health;
+            m_HealthBar.Percent = m_Players[0].Health;
 
             Particle = new ParticleManager<ParticleState>(1024 * 20, ParticleState.Update);
         }
@@ -80,22 +87,29 @@ namespace Ark
             {
                 HandleCollisions();
 
-                m_Player.Update(gameTime);
+                foreach (Player player in m_Players)
+                {
+                    player.Update(gameTime);
 
-                // Separate call because weapons need the current enemy list to
-                // resolve hits/effects, and Sprite.Update's signature can't
-                // carry it -- keep this before WaveManager.Update so damage
-                // resolves against enemies' pre-movement positions this frame.
-                m_Player.UpdateWeapons(gameTime, m_WaveManager.Enemies);
+                    // Separate call because weapons need the current enemy list to
+                    // resolve hits/effects, and Sprite.Update's signature can't
+                    // carry it -- keep this before WaveManager.Update so damage
+                    // resolves against enemies' pre-movement positions this frame.
+                    player.UpdateWeapons(gameTime, m_WaveManager.Enemies);
+                }
 
                 m_WaveManager.Update(gameTime);
 
                 Particle.Update();
 
-                m_HealthBar.Percent = m_Player.Health;
+                // Health bar and the death check below are still tied to a single
+                // player (m_Players[0]) -- a multi-player HUD and whether one co-op
+                // player dying should end the round for everyone are game-design
+                // decisions this pass doesn't answer, not architecture ones.
+                m_HealthBar.Percent = m_Players[0].Health;
                 m_HealthBar.Update();
 
-                if (m_Player.Health <= 0 && m_Player.IsAlive)
+                if (m_Players[0].Health <= 0 && m_Players[0].IsAlive)
                 {
                     Reset();
                 }
@@ -104,12 +118,16 @@ namespace Ark
                 {
                     if (enemy.IsAlive)
                     {
-                        if (m_Player.IsAlive && enemy.IsInRange(m_Player.Position))
+                        foreach (Player player in m_Players)
                         {
-                            if (m_Player.Position.X > enemy.Position.X - enemy.Origin.X
-                                && m_Player.Position.X < enemy.Position.X + enemy.Origin.X)
+                            if (player.IsAlive && enemy.IsInRange(player.Position))
                             {
-                                enemy.FireLaser();
+                                if (player.Position.X > enemy.Position.X - enemy.Origin.X
+                                    && player.Position.X < enemy.Position.X + enemy.Origin.X)
+                                {
+                                    enemy.FireLaser();
+                                    break;
+                                }
                             }
                         }
                     }
@@ -137,11 +155,27 @@ namespace Ark
             {
                 foreach (Laser laser in enemy.Lasers)
                 {
-                    if (laser.IsAlive && laser.BoundingRect.Intersects(m_Player.BoundingRect))
+                    if (!laser.IsAlive)
                     {
-                        laser.IsAlive = false;
-                        m_Player.Health -= laser.Damage;
+                        continue;
+                    }
 
+                    bool hit = false;
+
+                    foreach (Player player in m_Players)
+                    {
+                        if (laser.BoundingRect.Intersects(player.BoundingRect))
+                        {
+                            laser.IsAlive = false;
+                            player.Health -= laser.Damage;
+
+                            hit = true;
+                            break;
+                        }
+                    }
+
+                    if (hit)
+                    {
                         break;
                     }
                 }
@@ -159,7 +193,12 @@ namespace Ark
             spriteBatch.Begin();
 
             m_Background.Draw(SceneManager.SpriteBatch);
-            m_Player.Draw(SceneManager.SpriteBatch);
+
+            foreach (Player player in m_Players)
+            {
+                player.Draw(SceneManager.SpriteBatch);
+            }
+
             m_WaveManager.Draw(spriteBatch);
             Particle.Draw(SceneManager.SpriteBatch);
             m_HealthBar.Draw(SceneManager.SpriteBatch);

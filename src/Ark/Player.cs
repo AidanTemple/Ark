@@ -24,6 +24,10 @@ namespace Ark
 
         #region Properties
 
+        // Named Index, not PlayerIndex, so it doesn't shadow the
+        // PlayerIndex enum type within this class.
+        public PlayerIndex Index { get; private set; }
+
         public int Width { get; set; }
         public int Height { get; set; }
 
@@ -41,8 +45,10 @@ namespace Ark
 
         #region Initialisation
 
-        public Player(GraphicsDevice graphicsDevice)
+        public Player(GraphicsDevice graphicsDevice, PlayerIndex index)
         {
+            Index = index;
+
             m_Viewport = graphicsDevice.Viewport;
 
             m_ViewportRect = new Rectangle(m_Viewport.X, m_Viewport.Y,
@@ -108,7 +114,7 @@ namespace Ark
 
         private void UpdateGamePad(GameTime gameTime)
         {
-            GamePadState gamePadState = GamePad.GetState(PlayerIndex.One);
+            GamePadState gamePadState = GamePad.GetState(Index);
 
             float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
             Vector2 thumbstick = gamePadState.ThumbSticks.Left;
