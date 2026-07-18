@@ -1,7 +1,7 @@
 ﻿#region Using Statements
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input.Touch;
+using Microsoft.Xna.Framework.Input;
 #endregion
 
 namespace Ark
@@ -22,6 +22,8 @@ namespace Ark
         private Rectangle m_BoundingRect;
 
         private Missile[] m_Missiles;
+
+        private GamePadState m_PreviousGamePadState;
 
         #endregion
 
@@ -94,6 +96,8 @@ namespace Ark
 
         public override void Update(GameTime gameTime)
         {
+            UpdateGamePad(gameTime);
+
             Position.X = (int)MathHelper.Clamp(Position.X, m_Viewport.X + (Width / 2),
                 m_Viewport.Width - (Width / 2));
             Position.Y = (int)MathHelper.Clamp(Position.Y, m_Viewport.Y + (Height / 2),
@@ -103,6 +107,24 @@ namespace Ark
             m_BoundingRect.Y = (int)Position.Y - (int)Origin.Y;
 
             UpdateMissiles(gameTime);
+        }
+
+        private void UpdateGamePad(GameTime gameTime)
+        {
+            GamePadState gamePadState = GamePad.GetState(PlayerIndex.One);
+
+            float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            Vector2 thumbstick = gamePadState.ThumbSticks.Left;
+
+            // Left stick Y is +1 up / -1 down; screen space Y grows downward, so negate.
+            Position += new Vector2(thumbstick.X, -thumbstick.Y) * GameVariables.PlayerSpeed * deltaTime;
+
+            if (gamePadState.IsButtonDown(Buttons.A) && m_PreviousGamePadState.IsButtonUp(Buttons.A))
+            {
+                FireMissile();
+            }
+
+            m_PreviousGamePadState = gamePadState;
         }
 
         private void UpdateMissiles(GameTime gameTime)
@@ -119,23 +141,6 @@ namespace Ark
                         missile.IsAlive = false;
                         continue;
                     }
-                }
-            }
-        }
-
-        public void UpdateInput(InputState input)
-        {
-            foreach (GestureSample gesture in input.m_Gestures)
-            {
-                switch (gesture.GestureType)
-                {
-                    case GestureType.FreeDrag:
-                        Position += gesture.Delta;
-                        break;
-
-                    case GestureType.Tap:
-                        FireMissile();
-                        break;
                 }
             }
         }
