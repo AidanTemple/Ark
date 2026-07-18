@@ -70,6 +70,8 @@ namespace Ark
             get { return m_CurrentHealth <= 0; }
         }
 
+        public bool IsBeingPulled { get; set; }
+
         #endregion
 
         #region Initialisation
@@ -141,6 +143,11 @@ namespace Ark
 
         private void UpdateMovement()
         {
+            if (IsBeingPulled)
+            {
+                return;
+            }
+
             this.Position.Y += m_Speed;
 
             if(this.Position.Y > m_ViewportRect.Height)

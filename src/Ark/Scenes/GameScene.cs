@@ -11,8 +11,6 @@ namespace Ark
     {
         #region Private Members
 
-        private Random m_Random = new Random();
-
         private Background m_Background;
         private Player m_Player;
 
@@ -84,6 +82,12 @@ namespace Ark
 
                 m_Player.Update(gameTime);
 
+                // Separate call because weapons need the current enemy list to
+                // resolve hits/effects, and Sprite.Update's signature can't
+                // carry it -- keep this before WaveManager.Update so damage
+                // resolves against enemies' pre-movement positions this frame.
+                m_Player.UpdateWeapons(gameTime, m_WaveManager.Enemies);
+
                 m_WaveManager.Update(gameTime);
 
                 Particle.Update();
@@ -129,31 +133,6 @@ namespace Ark
 
         private void HandleCollisions()
         {
-            foreach (Missile missile in m_Player.Missiles)
-            {
-                foreach (Enemy enemy in m_WaveManager.Enemies)
-                {
-                    if (missile.IsAlive && enemy.IsAlive && missile.BoundingRect.Intersects(enemy.BoundingRect))
-                    {
-                        missile.IsAlive = false;
-                            
-                        enemy.CurrentHealth -= 1;
-                        GameVariables.Score += 1;
-
-                        if (enemy.CurrentHealth <= 0)
-                        {
-                            Vector2 position = new Vector2((int)enemy.Position.X - (int)enemy.Origin.X,
-                                (int)enemy.Position.Y - (int)enemy.Origin.Y);
-
-                            RemoveEntity(enemy.Width, enemy.Height, position, 120,
-                                    Color.DarkSlateGray, Color.DarkRed, 100, ParticleType.Enemy);
-                        }
-
-                        break;
-                    }
-                }
-            }
-
             foreach (Enemy enemy in m_WaveManager.Enemies)
             {
                 foreach (Laser laser in enemy.Lasers)
@@ -205,31 +184,6 @@ namespace Ark
         private void DrawGUI(SpriteBatch spriteBatch)
         {
             spriteBatch.DrawString(ContentManager.Game0Font, GameVariables.Score.ToString(), new Vector2(15, 15), Color.White);
-        }
-
-        #endregion
-
-        #region Helper Methods
-
-        private void RemoveEntity(int width, int height, Vector2 position, int particleCount,
-            Color colorA, Color colorB, int duration, ParticleType type)
-        {
-            Vector2 pos = new Vector2(position.X + width / 2, position.Y + height / 2);
-
-            for (int i = 0; i < particleCount; i++)
-            {
-                float speed = 18f * (1f - 1 / m_Random.NextFloat(1f, 10f));
-
-                var state = new ParticleState()
-                {
-                    Velocity = m_Random.NextVector2(speed, speed),
-                    Type = type,
-                    LengthMultiplier = 1f
-                };
-
-                Color color = Color.Lerp(colorA, colorB, m_Random.NextFloat(0, 1));
-                Particle.CreateParticle(ContentManager.LineParticle, pos, color, duration, 1f, state);
-            }
         }
 
         #endregion
