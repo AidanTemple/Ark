@@ -36,7 +36,7 @@ namespace Ark
 
         public GameScene()
         {
-            TransitionOnTime = TimeSpan.FromSeconds(2.0);
+            TransitionOnTime = TimeSpan.FromSeconds(1.5);
             TransitionOffTime = TimeSpan.FromSeconds(0.5);
 
             IsPaused = false;
@@ -206,11 +206,6 @@ namespace Ark
         public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
         {
             SceneManager.GraphicsDevice.Clear(ClearOptions.Target, Color.Black, 0, 0);
-        
-            if(TransitionPosition > 0)
-            {
-                SceneManager.FadeBackBufferToBlack(1.0f - TransitionAlpha);
-            }
 
             spriteBatch.Begin();
 
@@ -230,6 +225,11 @@ namespace Ark
             DrawGUI(spriteBatch);
 
             spriteBatch.End();
+
+            if (TransitionPosition > 0)
+            {
+                SceneManager.FadeBackBufferToBlack(1.0f - TransitionAlpha);
+            }
         }
 
         private void DrawGUI(SpriteBatch spriteBatch)

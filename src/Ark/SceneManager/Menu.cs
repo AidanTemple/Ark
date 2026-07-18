@@ -94,9 +94,12 @@ namespace Ark
                 entry.Draw(this, selected, gameTime);
             }
 
-            float transitionOffset = (float)Math.Pow(TransitionPosition, 2);
-
             spriteBatch.End();
+
+            if (TransitionPosition > 0)
+            {
+                SceneManager.FadeBackBufferToBlack(1.0f - TransitionAlpha);
+            }
         }
 
         #endregion
