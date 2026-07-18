@@ -42,7 +42,15 @@ namespace Ark
         public float CurrentHealth
         {
             get { return m_CurrentHealth; }
-            set { m_CurrentHealth = value;  }
+            set
+            {
+                m_CurrentHealth = value;
+
+                if (m_CurrentHealth <= 0)
+                {
+                    IsAlive = false;
+                }
+            }
         }
 
         public Rectangle BoundingRect
@@ -124,11 +132,6 @@ namespace Ark
 
         public override void Update(GameTime gameTime)
         {
-            if(m_CurrentHealth <= 0)
-            {
-                IsAlive = false;
-            }
-
             m_BoundingRect.X = (int)Position.X - (int)Origin.X;
             m_BoundingRect.Y = (int)Position.Y - (int)Origin.Y;
 
@@ -140,9 +143,10 @@ namespace Ark
         {
             this.Position.Y += m_Speed;
 
-            if(this.Position.Y > 800)
+            if(this.Position.Y > m_ViewportRect.Height)
             {
-                this.Position.Y = -30;
+                this.Position.X = Extensions.Random.Next(GameVariables.EnemySpawnMinX, GameVariables.EnemySpawnMaxX);
+                this.Position.Y = Extensions.Random.Next(GameVariables.EnemySpawnMinY, GameVariables.EnemySpawnMaxY);
             }
         }
 
@@ -181,8 +185,6 @@ namespace Ark
 
                 spriteBatch.Draw(Texture, Position, null, Color.White, Rotation,
                     Origin, Scale, SpriteEffects.None, Depth);
-
-                base.Draw(spriteBatch);
             }
         }
 
@@ -194,14 +196,14 @@ namespace Ark
         {
             if (m_LaserTime >= m_FireInterval)
             {
-                for (int i = 0; i < 2; i++)
+                for (int i = 0; i < m_MaxLasers; i++)
                 {
                     if (!m_Lasers[i].IsAlive)
                     {
                         m_Lasers[i].IsAlive = true;
                         m_Lasers[i].Velocity = new Vector2(0, 10);
 
-                        if (i == 1)
+                        if (i % 2 == 1)
                         {
                             m_Lasers[i].Position = new Vector2(this.Position.X + 14, this.Position.Y + 10);
                         }
@@ -210,11 +212,11 @@ namespace Ark
                             m_Lasers[i].Position = new Vector2(this.Position.X - 15, this.Position.Y + 3);
                         }
 
+                        m_LaserTime = 0;
+
                         return;
                     }
                 }
-
-                m_LaserTime = 0;
             }
         }
 

@@ -70,8 +70,6 @@ namespace Ark
             {
                 spriteBatch.Draw(Texture, Position, null, Color.White, Rotation,
                     Origin, Scale, SpriteEffects.None, Depth);
-
-                base.Draw(spriteBatch);
             }
         }
 

@@ -69,8 +69,8 @@ namespace Ark
 
         private void AddEnemy()
         {
-            int x = m_Random.Next(30, 450);
-            int y = m_Random.Next(-30, -10);
+            int x = m_Random.Next(GameVariables.EnemySpawnMinX, GameVariables.EnemySpawnMaxX);
+            int y = m_Random.Next(GameVariables.EnemySpawnMinY, GameVariables.EnemySpawnMaxY);
 
             Enemy enemy = new Enemy(m_GraphicsDevice, new Vector2(x, y), 1, GameVariables.EnemySpeed);
             m_Enemies.Add(enemy);
@@ -111,19 +111,8 @@ namespace Ark
                 Enemy enemy = m_Enemies[i];
                 enemy.Update(gameTime);
 
-                if(enemy.Position.Y > m_GraphicsDevice.Viewport.Height)
-                {
-                    enemy.Position.X = m_Random.Next(30, 450);
-                    enemy.Position.Y = m_Random.Next(-30, -10);
-                }
-
                 if(enemy.IsDead)
                 {
-                    if(enemy.CurrentHealth > 0)
-                    {
-                        m_HasReachedEnd = true;
-                    }
-
                     m_Enemies.Remove(enemy);
                     i--;
                 }

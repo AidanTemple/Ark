@@ -107,8 +107,7 @@ namespace Ark
                         RemoveEntity(m_Player.Width, m_Player.Height, position, 200,
                             Color.DeepSkyBlue, Color.DarkBlue, 100, ParticleType.Player);
 
-                        // TODO: Switch scene once killed.
-                        //LoadScene.Load(SceneManager, false, ControllingPlayer, new StatScene());
+                        LoadScene.Load(SceneManager, false, ControllingPlayer, new StatScene());
                     }
 
                     foreach (Enemy enemy in m_WaveManager.Enemies)
@@ -169,7 +168,7 @@ namespace Ark
             {
                 foreach (Enemy enemy in m_WaveManager.Enemies)
                 {
-                    if (missile.IsAlive && missile.BoundingRect.Intersects(enemy.BoundingRect))
+                    if (missile.IsAlive && enemy.IsAlive && missile.BoundingRect.Intersects(enemy.BoundingRect))
                     {
                         missile.IsAlive = false;
                             
