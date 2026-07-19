@@ -46,7 +46,7 @@ namespace Ark
             m_SceneManager = new SceneManager(this);
             Components.Add(m_SceneManager);
 
-            m_SceneManager.AddScene(new HeaderScene(Content), null);
+            m_SceneManager.AddScene(new HeaderScene(), null);
         }
 
         /// <summary>
@@ -68,8 +68,6 @@ namespace Ark
         {
             // Create a new SpriteBatch, which can be used to draw textures.
             m_SpriteBatch = new SpriteBatch(GraphicsDevice);
-
-            ContentManager.Load(Content);
         }
 
         /// <summary>

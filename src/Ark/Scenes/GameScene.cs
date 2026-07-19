@@ -23,6 +23,8 @@ namespace Ark
 
         private bool m_ReturnToMenu;
 
+        private Microsoft.Xna.Framework.Content.ContentManager m_Content;
+
         #endregion
 
         #region Properties
@@ -42,6 +44,10 @@ namespace Ark
         public override void LoadContent()
         {
             SceneManager.Game.ResetElapsedTime();
+
+            m_Content = new Microsoft.Xna.Framework.Content.ContentManager(SceneManager.Game.Services, "Content");
+
+            ContentManager.LoadGame(m_Content);
 
             Reset();
         }
@@ -79,7 +85,18 @@ namespace Ark
 
         public override void UnloadContent()
         {
-            
+            m_Content.Unload();
+
+            ContentManager.UnloadGame();
+
+            // Particle is static, not instance-scoped, so it otherwise
+            // survives across separate GameScene instances (e.g. exit to
+            // menu and start a new game) -- Reset()'s "if (Particle == null)"
+            // guard exists to avoid dropping an in-flight burst on a
+            // same-instance death respawn, not to keep a manager alive whose
+            // particles may be holding a Texture2D that was just disposed
+            // above.
+            Particle = null;
         }
 
         #endregion

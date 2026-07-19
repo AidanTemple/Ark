@@ -19,6 +19,8 @@ namespace Ark
 
         private Texture2D m_MenuBackground;
 
+        private Microsoft.Xna.Framework.Content.ContentManager m_Content;
+
         #endregion
 
         #region Properties
@@ -36,8 +38,22 @@ namespace Ark
         {
             TransitionOnTime = TimeSpan.FromSeconds(0.5);
             TransitionOffTime = TimeSpan.FromSeconds(0);
+        }
 
-            m_MenuBackground = ContentManager.Background_004;
+        public override void LoadContent()
+        {
+            m_Content = new Microsoft.Xna.Framework.Content.ContentManager(SceneManager.Game.Services, "Content");
+
+            ContentManager.LoadMenu(m_Content);
+
+            m_MenuBackground = ContentManager.MenuBackground;
+        }
+
+        public override void UnloadContent()
+        {
+            m_Content.Unload();
+
+            ContentManager.UnloadMenu();
         }
 
         #endregion
