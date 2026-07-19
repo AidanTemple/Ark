@@ -34,6 +34,14 @@ namespace Ark
             get { return new Vector2(0, GameVariables.GravityBombVelocityY); }
         }
 
+        // The bomb always kills itself on a fixed timer via Detonate() below,
+        // regardless of position -- it must not be cut short by the generic
+        // out-of-bounds check while still climbing through its Flying phase.
+        protected override bool KillWhenOutOfBounds
+        {
+            get { return false; }
+        }
+
         #endregion
 
         #region Update
@@ -94,17 +102,7 @@ namespace Ark
 
                 if (Physics.IsWithinRadius(enemy.Position, bomb.Position, GameVariables.GravityBombDetonateRadius))
                 {
-                    enemy.CurrentHealth -= Damage;
-                    GameVariables.Score += 1;
-
-                    if (enemy.CurrentHealth <= 0)
-                    {
-                        Vector2 position = new Vector2((int)enemy.Position.X - (int)enemy.Origin.X,
-                            (int)enemy.Position.Y - (int)enemy.Origin.Y);
-
-                        ParticleEffects.SpawnBurst(GameScene.Particle, enemy.Width, enemy.Height, position, 120,
-                            Color.DarkSlateGray, Color.DarkRed, 100, ParticleType.Enemy);
-                    }
+                    ApplyDamage(enemy);
                 }
             }
 

@@ -21,6 +21,8 @@ namespace Ark
 
         private Countdown m_Countdown;
 
+        private bool m_ReturnToMenu;
+
         #endregion
 
         #region Properties
@@ -64,7 +66,15 @@ namespace Ark
             m_HealthBar = new StatusBar();
             m_HealthBar.Percent = m_Players[0].Health;
 
-            Particle = new ParticleManager<ParticleState>(1024 * 20, ParticleState.Update);
+            // Keep the existing manager across resets instead of replacing it --
+            // particles already age themselves out via Update(), and replacing
+            // it here would silently drop any burst spawned earlier this same
+            // frame (e.g. a weapon killing an enemy on the same frame the
+            // player dies and triggers this Reset()).
+            if (Particle == null)
+            {
+                Particle = new ParticleManager<ParticleState>(1024 * 20, ParticleState.Update);
+            }
         }
 
         public override void UnloadContent()
@@ -79,6 +89,12 @@ namespace Ark
         public override void Update(GameTime gameTime, bool hasFocus, bool coveredByOtherScreen)
         {
             base.Update(gameTime, hasFocus, coveredByOtherScreen);
+
+            if (m_ReturnToMenu && IsExiting && TransitionPosition >= 1f)
+            {
+                SceneManager.AddScene(new MenuScene(), ControllingPlayer);
+                m_ReturnToMenu = false;
+            }
 
             m_Background.Update(gameTime);
             m_Countdown.Update(gameTime);
@@ -120,7 +136,7 @@ namespace Ark
                     {
                         foreach (Player player in m_Players)
                         {
-                            if (player.IsAlive && enemy.IsInRange(player.Position))
+                            if (player.IsAlive && enemy.IsOnScreen && enemy.IsInRange(player.Position))
                             {
                                 if (player.Position.X > enemy.Position.X - enemy.Origin.X
                                     && player.Position.X < enemy.Position.X + enemy.Origin.X)
@@ -143,8 +159,8 @@ namespace Ark
 
                 if (input.IsNewButtonPress(Buttons.Back, ControllingPlayer, out player))
                 {
-                    SceneManager.RemoveScene(this);
-                    SceneManager.AddScene(new MenuScene(), ControllingPlayer);
+                    m_ReturnToMenu = true;
+                    ExitScene();
                 }
             }
         }
@@ -160,8 +176,6 @@ namespace Ark
                         continue;
                     }
 
-                    bool hit = false;
-
                     foreach (Player player in m_Players)
                     {
                         if (Physics.Overlaps(laser.BoundingRect, player.BoundingRect))
@@ -169,12 +183,11 @@ namespace Ark
                             laser.IsAlive = false;
                             player.Health -= laser.Damage;
 
-                            hit = true;
                             break;
                         }
                     }
 
-                    if (hit)
+                    if (!laser.IsAlive)
                     {
                         break;
                     }

@@ -23,6 +23,17 @@ namespace Ark
 
         protected abstract Vector2 LaunchVelocity { get; }
 
+        // Most projectiles are pure straight-line shots, so leaving the
+        // viewport always means "gone for good." GravityBombWeapon overrides
+        // this -- its projectile is driven by a state timer, not position,
+        // and always kills itself in Detonate(), so it must survive going
+        // briefly out of bounds during its Flying phase instead of being cut
+        // short before it ever gets to pull/detonate.
+        protected virtual bool KillWhenOutOfBounds
+        {
+            get { return true; }
+        }
+
         #endregion
 
         #region Initialisation
@@ -82,7 +93,7 @@ namespace Ark
 
                 projectile.Update(gameTime);
 
-                if (Physics.IsOutOfBounds(projectile.Position, viewportBounds))
+                if (KillWhenOutOfBounds && Physics.IsOutOfBounds(projectile.Position, viewportBounds))
                 {
                     projectile.IsAlive = false;
                     continue;
@@ -98,6 +109,23 @@ namespace Ark
         /// (and whether) to interact with the enemy list and when to kill the projectile.
         /// </summary>
         protected abstract void ResolveEffects(Projectile projectile, GameTime gameTime, List<Enemy> enemies);
+
+        // Shared by every weapon's hit-resolution: apply this weapon's damage,
+        // award score, and spawn the death burst if that damage was lethal.
+        protected void ApplyDamage(Enemy enemy)
+        {
+            enemy.CurrentHealth -= Damage;
+            GameVariables.Score += 1;
+
+            if (enemy.CurrentHealth <= 0)
+            {
+                Vector2 position = new Vector2((int)enemy.Position.X - (int)enemy.Origin.X,
+                    (int)enemy.Position.Y - (int)enemy.Origin.Y);
+
+                ParticleEffects.SpawnBurst(GameScene.Particle, enemy.Width, enemy.Height, position, 120,
+                    Color.DarkSlateGray, Color.DarkRed, 100, ParticleType.Enemy);
+            }
+        }
 
         #endregion
 

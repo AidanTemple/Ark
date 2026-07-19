@@ -61,17 +61,7 @@ namespace Ark
 
                 railgun.HitEnemies.Add(enemy);
 
-                enemy.CurrentHealth -= Damage;
-                GameVariables.Score += 1;
-
-                if (enemy.CurrentHealth <= 0)
-                {
-                    Vector2 position = new Vector2((int)enemy.Position.X - (int)enemy.Origin.X,
-                        (int)enemy.Position.Y - (int)enemy.Origin.Y);
-
-                    ParticleEffects.SpawnBurst(GameScene.Particle, enemy.Width, enemy.Height, position, 120,
-                        Color.DarkSlateGray, Color.DarkRed, 100, ParticleType.Enemy);
-                }
+                ApplyDamage(enemy);
             }
         }
 

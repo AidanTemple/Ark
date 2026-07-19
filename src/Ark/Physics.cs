@@ -39,13 +39,10 @@ namespace Ark
             return toOrigin * speed;
         }
 
-        // bounds.Width/bounds.Height (not bounds.Right/bounds.Bottom) as the
-        // upper edge is intentional -- matches the original Player clamp
-        // formula, which relies on bounds.X == 0 / bounds.Y == 0.
         public static Vector2 ClampToBounds(Vector2 position, Rectangle bounds, int halfWidth, int halfHeight)
         {
-            float x = (int)MathHelper.Clamp(position.X, bounds.X + halfWidth, bounds.Width - halfWidth);
-            float y = (int)MathHelper.Clamp(position.Y, bounds.Y + halfHeight, bounds.Height - halfHeight);
+            float x = (int)MathHelper.Clamp(position.X, bounds.Left + halfWidth, bounds.Right - halfWidth);
+            float y = (int)MathHelper.Clamp(position.Y, bounds.Top + halfHeight, bounds.Bottom - halfHeight);
 
             return new Vector2(x, y);
         }

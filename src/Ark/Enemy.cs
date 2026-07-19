@@ -72,6 +72,15 @@ namespace Ark
 
         public bool IsBeingPulled { get; set; }
 
+        // A gravity bomb can pull an enemy above the top of the viewport
+        // (there's no upper wrap the way there is for the bottom edge in
+        // UpdateMovement) -- gate anything that shouldn't happen while
+        // invisible, like firing, on this.
+        public bool IsOnScreen
+        {
+            get { return !Physics.IsOutOfBounds(Position, m_ViewportRect); }
+        }
+
         #endregion
 
         #region Initialisation

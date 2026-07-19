@@ -49,6 +49,12 @@ namespace Ark
         {
             Index = index;
 
+            // Seed with a real poll instead of the struct default (all buttons
+            // up) -- otherwise a button already held on the frame this Player
+            // is constructed (e.g. still holding A from selecting "New Game")
+            // reads as a fresh press on the very first UpdateGamePad call.
+            m_PreviousGamePadState = GamePad.GetState(Index);
+
             m_Viewport = graphicsDevice.Viewport;
 
             m_ViewportRect = new Rectangle(m_Viewport.X, m_Viewport.Y,
