@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
+using System.Collections.Generic;
 #endregion
 
 namespace Ark
@@ -11,10 +12,8 @@ namespace Ark
     {
         #region Private Members
 
-        private Random m_Random = new Random();
-
         private Background m_Background;
-        private Player m_Player;
+        private List<Player> m_Players;
 
         private WaveManager m_WaveManager;
 
@@ -22,7 +21,9 @@ namespace Ark
 
         private Countdown m_Countdown;
 
-        private bool IsPaused;
+        private bool m_ReturnToMenu;
+
+        private Microsoft.Xna.Framework.Content.ContentManager m_Content;
 
         #endregion
 
@@ -36,32 +37,66 @@ namespace Ark
 
         public GameScene()
         {
-            TransitionOnTime = TimeSpan.FromSeconds(2.0);
+            TransitionOnTime = TimeSpan.FromSeconds(1.5);
             TransitionOffTime = TimeSpan.FromSeconds(0.5);
-
-            IsPaused = false;
         }
 
         public override void LoadContent()
         {
             SceneManager.Game.ResetElapsedTime();
 
+            m_Content = new Microsoft.Xna.Framework.Content.ContentManager(SceneManager.Game.Services, "Content");
+
+            ContentManager.LoadGame(m_Content);
+
+            Reset();
+        }
+
+        private void Reset()
+        {
+            GameVariables.Score = 0;
+
             m_Background = new Background(SceneManager.GraphicsDevice);
 
             m_Countdown = new Countdown();
 
-            m_Player = new Player(SceneManager.GraphicsDevice);
+            // A single-element list for now -- Player itself no longer hardcodes
+            // PlayerIndex.One (it listens to whichever controller is passed in),
+            // so a second entry here is all a future local co-op player would need
+            // at the input level. Death handling and the health bar below are still
+            // single-player-shaped by design; see the comments at their call sites.
+            m_Players = new List<Player> { new Player(SceneManager.GraphicsDevice, ControllingPlayer ?? PlayerIndex.One) };
+
             m_WaveManager = new WaveManager(SceneManager.GraphicsDevice, ContentManager.Enemy, 24);
 
             m_HealthBar = new StatusBar();
-            m_HealthBar.Percent = m_Player.Health;
+            m_HealthBar.Percent = m_Players[0].Health;
 
-            Particle = new ParticleManager<ParticleState>(1024 * 20, ParticleState.Update);
+            // Keep the existing manager across resets instead of replacing it --
+            // particles already age themselves out via Update(), and replacing
+            // it here would silently drop any burst spawned earlier this same
+            // frame (e.g. a weapon killing an enemy on the same frame the
+            // player dies and triggers this Reset()).
+            if (Particle == null)
+            {
+                Particle = new ParticleManager<ParticleState>(1024 * 20, ParticleState.Update);
+            }
         }
 
         public override void UnloadContent()
         {
-            
+            m_Content.Unload();
+
+            ContentManager.UnloadGame();
+
+            // Particle is static, not instance-scoped, so it otherwise
+            // survives across separate GameScene instances (e.g. exit to
+            // menu and start a new game) -- Reset()'s "if (Particle == null)"
+            // guard exists to avoid dropping an in-flight burst on a
+            // same-instance death respawn, not to keep a manager alive whose
+            // particles may be holding a Texture2D that was just disposed
+            // above.
+            Particle = null;
         }
 
         #endregion
@@ -72,51 +107,59 @@ namespace Ark
         {
             base.Update(gameTime, hasFocus, coveredByOtherScreen);
 
-            if (IsPaused)
+            if (m_ReturnToMenu && IsExiting && TransitionPosition >= 1f)
             {
-
+                SceneManager.AddScene(new MenuScene(), ControllingPlayer);
+                m_ReturnToMenu = false;
             }
-            else
+
+            m_Background.Update(gameTime);
+            m_Countdown.Update(gameTime);
+
+            if (!m_Countdown.IsCountingDown)
             {
-                m_Background.Update(gameTime);
-                m_Countdown.Update(gameTime);
+                HandleCollisions();
 
-                if (!m_Countdown.IsCountingDown)
+                foreach (Player player in m_Players)
                 {
-                    HandleCollisions();
+                    player.Update(gameTime);
 
-                    m_Player.Update(gameTime);
+                    // Separate call because weapons need the current enemy list to
+                    // resolve hits/effects, and Sprite.Update's signature can't
+                    // carry it -- keep this before WaveManager.Update so damage
+                    // resolves against enemies' pre-movement positions this frame.
+                    player.UpdateWeapons(gameTime, m_WaveManager.Enemies);
+                }
 
-                    m_WaveManager.Update(gameTime);
+                m_WaveManager.Update(gameTime);
 
-                    Particle.Update();
+                Particle.Update();
 
-                    m_HealthBar.Percent = m_Player.Health;
-                    m_HealthBar.Update();
+                // Health bar and the death check below are still tied to a single
+                // player (m_Players[0]) -- a multi-player HUD and whether one co-op
+                // player dying should end the round for everyone are game-design
+                // decisions this pass doesn't answer, not architecture ones.
+                m_HealthBar.Percent = m_Players[0].Health;
+                m_HealthBar.Update();
 
-                    if (m_Player.Health <= 0 && m_Player.IsAlive)
+                if (m_Players[0].Health <= 0 && m_Players[0].IsAlive)
+                {
+                    Reset();
+                }
+
+                foreach (Enemy enemy in m_WaveManager.Enemies)
+                {
+                    if (enemy.IsAlive)
                     {
-                        m_Player.IsAlive = false;
-
-                        Vector2 position = new Vector2((int)m_Player.Position.X - (int)m_Player.Origin.X,
-                                    (int)m_Player.Position.Y - (int)m_Player.Origin.Y);
-
-                        RemoveEntity(m_Player.Width, m_Player.Height, position, 200,
-                            Color.DeepSkyBlue, Color.DarkBlue, 100, ParticleType.Player);
-
-                        LoadScene.Load(SceneManager, false, ControllingPlayer, new StatScene());
-                    }
-
-                    foreach (Enemy enemy in m_WaveManager.Enemies)
-                    {
-                        if (enemy.IsAlive)
+                        foreach (Player player in m_Players)
                         {
-                            if (m_Player.IsAlive && enemy.IsInRange(m_Player.Position))
+                            if (player.IsAlive && enemy.IsOnScreen && enemy.IsInRange(player.Position))
                             {
-                                if (m_Player.Position.X > enemy.Position.X - enemy.Origin.X
-                                    && m_Player.Position.X < enemy.Position.X + enemy.Origin.X)
+                                if (player.Position.X > enemy.Position.X - enemy.Origin.X
+                                    && player.Position.X < enemy.Position.X + enemy.Origin.X)
                                 {
                                     enemy.FireLaser();
+                                    break;
                                 }
                             }
                         }
@@ -129,68 +172,40 @@ namespace Ark
         {
             if(input != null)
             {
-                int playerIndex = (int)ControllingPlayer.Value;
-
-                KeyboardState keyboardState = input.m_CurrentKeyboardStates[playerIndex];
-                GamePadState gamePadState = input.m_CurrentGamePadStates[playerIndex];
-
                 PlayerIndex player;
 
-                if(IsPaused)
+                if (input.IsNewButtonPress(Buttons.Back, ControllingPlayer, out player))
                 {
-                    if (input.IsNewButtonPress(Buttons.Back, ControllingPlayer, out player))
-                    {
-                        LoadScene.Load(SceneManager, true, ControllingPlayer, new MenuScene());
-                    }
-                }
-                else
-                {
-#if DEBUG
-                    if (input.IsNewButtonPress(Buttons.Back, ControllingPlayer, out player))
-                    {
-                        IsPaused = true;
-                    }
-#endif
+                    m_ReturnToMenu = true;
+                    ExitScene();
                 }
             }
         }
 
         private void HandleCollisions()
         {
-            foreach (Missile missile in m_Player.Missiles)
-            {
-                foreach (Enemy enemy in m_WaveManager.Enemies)
-                {
-                    if (missile.IsAlive && enemy.IsAlive && missile.BoundingRect.Intersects(enemy.BoundingRect))
-                    {
-                        missile.IsAlive = false;
-                            
-                        enemy.CurrentHealth -= 1;
-                        GameVariables.Score += 1;
-
-                        if (enemy.CurrentHealth <= 0)
-                        {
-                            Vector2 position = new Vector2((int)enemy.Position.X - (int)enemy.Origin.X,
-                                (int)enemy.Position.Y - (int)enemy.Origin.Y);
-
-                            RemoveEntity(enemy.Width, enemy.Height, position, 120,
-                                    Color.DarkSlateGray, Color.DarkRed, 100, ParticleType.Enemy);
-                        }
-
-                        break;
-                    }
-                }
-            }
-
             foreach (Enemy enemy in m_WaveManager.Enemies)
             {
                 foreach (Laser laser in enemy.Lasers)
                 {
-                    if (laser.IsAlive && laser.BoundingRect.Intersects(m_Player.BoundingRect))
+                    if (!laser.IsAlive)
                     {
-                        laser.IsAlive = false;
-                        m_Player.Health -= laser.Damage;
+                        continue;
+                    }
 
+                    foreach (Player player in m_Players)
+                    {
+                        if (Physics.Overlaps(laser.BoundingRect, player.BoundingRect))
+                        {
+                            laser.IsAlive = false;
+                            player.Health -= laser.Damage;
+
+                            break;
+                        }
+                    }
+
+                    if (!laser.IsAlive)
+                    {
                         break;
                     }
                 }
@@ -204,16 +219,16 @@ namespace Ark
         public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
         {
             SceneManager.GraphicsDevice.Clear(ClearOptions.Target, Color.Black, 0, 0);
-        
-            if(TransitionPosition > 0)
-            {
-                SceneManager.FadeBackBufferToBlack(1.0f - TransitionAlpha);
-            }
 
             spriteBatch.Begin();
 
             m_Background.Draw(SceneManager.SpriteBatch);
-            m_Player.Draw(SceneManager.SpriteBatch);
+
+            foreach (Player player in m_Players)
+            {
+                player.Draw(SceneManager.SpriteBatch);
+            }
+
             m_WaveManager.Draw(spriteBatch);
             Particle.Draw(SceneManager.SpriteBatch);
             m_HealthBar.Draw(SceneManager.SpriteBatch);
@@ -228,36 +243,16 @@ namespace Ark
             DrawGUI(spriteBatch);
 
             spriteBatch.End();
+
+            if (TransitionPosition > 0)
+            {
+                SceneManager.FadeBackBufferToBlack(1.0f - TransitionAlpha);
+            }
         }
 
         private void DrawGUI(SpriteBatch spriteBatch)
         {
             spriteBatch.DrawString(ContentManager.Game0Font, GameVariables.Score.ToString(), new Vector2(15, 15), Color.White);
-        }
-
-        #endregion
-
-        #region Helper Methods
-
-        private void RemoveEntity(int width, int height, Vector2 position, int particleCount,
-            Color colorA, Color colorB, int duration, ParticleType type)
-        {
-            Vector2 pos = new Vector2(position.X + width / 2, position.Y + height / 2);
-
-            for (int i = 0; i < particleCount; i++)
-            {
-                float speed = 18f * (1f - 1 / m_Random.NextFloat(1f, 10f));
-
-                var state = new ParticleState()
-                {
-                    Velocity = m_Random.NextVector2(speed, speed),
-                    Type = type,
-                    LengthMultiplier = 1f
-                };
-
-                Color color = Color.Lerp(colorA, colorB, m_Random.NextFloat(0, 1));
-                Particle.CreateParticle(ContentManager.LineParticle, pos, color, duration, 1f, state);
-            }
         }
 
         #endregion

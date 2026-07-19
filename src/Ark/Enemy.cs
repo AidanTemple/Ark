@@ -70,6 +70,17 @@ namespace Ark
             get { return m_CurrentHealth <= 0; }
         }
 
+        public bool IsBeingPulled { get; set; }
+
+        // A gravity bomb can pull an enemy above the top of the viewport
+        // (there's no upper wrap the way there is for the bottom edge in
+        // UpdateMovement) -- gate anything that shouldn't happen while
+        // invisible, like firing, on this.
+        public bool IsOnScreen
+        {
+            get { return !Physics.IsOutOfBounds(Position, m_ViewportRect); }
+        }
+
         #endregion
 
         #region Initialisation
@@ -141,6 +152,11 @@ namespace Ark
 
         private void UpdateMovement()
         {
+            if (IsBeingPulled)
+            {
+                return;
+            }
+
             this.Position.Y += m_Speed;
 
             if(this.Position.Y > m_ViewportRect.Height)
@@ -160,8 +176,7 @@ namespace Ark
 
                 if(m_Lasers[i].IsAlive)
                 {
-                    if (!m_ViewportRect.Contains(new Point((int)m_Lasers[i].Position.X,
-                        (int)m_Lasers[i].Position.Y)))
+                    if (Physics.IsOutOfBounds(m_Lasers[i].Position, m_ViewportRect))
                     {
                         m_Lasers[i].IsAlive = false;
                         continue;
@@ -222,7 +237,7 @@ namespace Ark
 
         public bool IsInRange(Vector2 position)
         {
-            return Vector2.Distance(m_Center, position) <= m_Radius;
+            return Physics.IsWithinRadius(m_Center, position, m_Radius);
         }
 
         #endregion

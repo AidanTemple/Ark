@@ -1,4 +1,4 @@
-﻿#region Using Statements
+#region Using Statements
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Input.Touch;
@@ -13,10 +13,7 @@ namespace Ark
 
         public const int m_MaxInputs = 4;
 
-        public readonly KeyboardState[] m_CurrentKeyboardStates;
         public readonly GamePadState[] m_CurrentGamePadStates;
-
-        public readonly KeyboardState[] m_PreviousKeyboardStates;
         public readonly GamePadState[] m_PreviousGamePadStates;
 
         public readonly bool[] m_GamePadWasConnected;
@@ -31,10 +28,7 @@ namespace Ark
 
         public InputState()
         {
-            m_CurrentKeyboardStates = new KeyboardState[m_MaxInputs];
             m_CurrentGamePadStates = new GamePadState[m_MaxInputs];
-
-            m_PreviousKeyboardStates = new KeyboardState[m_MaxInputs];
             m_PreviousGamePadStates = new GamePadState[m_MaxInputs];
 
             m_GamePadWasConnected = new bool[m_MaxInputs];
@@ -48,10 +42,8 @@ namespace Ark
         {
             for (int i = 0; i < m_MaxInputs; i++)
             {
-                m_PreviousKeyboardStates[i] = m_CurrentKeyboardStates[i];
                 m_PreviousGamePadStates[i] = m_CurrentGamePadStates[i];
 
-                m_CurrentKeyboardStates[i] = Keyboard.GetState();
                 m_CurrentGamePadStates[i] = GamePad.GetState((PlayerIndex)i);
 
                 // Keep track of whether a gamepad has ever been
@@ -75,35 +67,6 @@ namespace Ark
         #endregion
 
         #region Helper Methods
-
-        /// <summary>
-        /// Helper for checking if a key was newly pressed during this update. The
-        /// controllingPlayer parameter specifies which player to read input for.
-        /// If this is null, it will accept input from any player. When a keypress
-        /// is detected, the output playerIndex reports which player pressed it.
-        /// </summary>
-        public bool IsNewKeyPress(Keys key, PlayerIndex? controllingPlayer,
-            out PlayerIndex playerIndex)
-        {
-            if (controllingPlayer.HasValue)
-            {
-                // Read input from the specified player.
-                playerIndex = controllingPlayer.Value;
-
-                int i = (int)playerIndex;
-
-                return (m_CurrentKeyboardStates[i].IsKeyDown(key) &&
-                     m_PreviousKeyboardStates[i].IsKeyUp(key));
-            }
-            else
-            {
-                // Accept input from any player.
-                return (IsNewKeyPress(key, PlayerIndex.One, out playerIndex) ||
-                    IsNewKeyPress(key, PlayerIndex.Two, out playerIndex) ||
-                    IsNewKeyPress(key, PlayerIndex.Three, out playerIndex) ||
-                    IsNewKeyPress(key, PlayerIndex.Four, out playerIndex));
-            }
-        }
 
         /// <summary>
         /// Helper for checking if a button was newly pressed during this update.
@@ -143,9 +106,7 @@ namespace Ark
         public bool IsMenuSelect(PlayerIndex? controllingPlayer,
             out PlayerIndex playerIndex)
         {
-            return IsNewKeyPress(Keys.Space, controllingPlayer, out playerIndex) ||
-                IsNewKeyPress(Keys.Enter, controllingPlayer, out playerIndex) ||
-                IsNewButtonPress(Buttons.A, controllingPlayer, out playerIndex) ||
+            return IsNewButtonPress(Buttons.A, controllingPlayer, out playerIndex) ||
                 IsNewButtonPress(Buttons.Start, controllingPlayer, out playerIndex);
         }
 
@@ -158,8 +119,7 @@ namespace Ark
         public bool IsMenuCancel(PlayerIndex? controllingPlayer,
             out PlayerIndex playerIndex)
         {
-            return IsNewKeyPress(Keys.Escape, controllingPlayer, out playerIndex) ||
-                IsNewButtonPress(Buttons.B, controllingPlayer, out playerIndex) ||
+            return IsNewButtonPress(Buttons.B, controllingPlayer, out playerIndex) ||
                 IsNewButtonPress(Buttons.Back, controllingPlayer, out playerIndex);
         }
 
@@ -172,8 +132,7 @@ namespace Ark
         {
             PlayerIndex playerIndex;
 
-            return IsNewKeyPress(Keys.Up, controllingPlayer, out playerIndex) ||
-                IsNewButtonPress(Buttons.DPadUp, controllingPlayer, out playerIndex) ||
+            return IsNewButtonPress(Buttons.DPadUp, controllingPlayer, out playerIndex) ||
                 IsNewButtonPress(Buttons.LeftThumbstickUp, controllingPlayer, out playerIndex);
         }
 
@@ -186,23 +145,8 @@ namespace Ark
         {
             PlayerIndex playerIndex;
 
-            return IsNewKeyPress(Keys.Down, controllingPlayer, out playerIndex) ||
-                IsNewButtonPress(Buttons.DPadDown, controllingPlayer, out playerIndex) ||
+            return IsNewButtonPress(Buttons.DPadDown, controllingPlayer, out playerIndex) ||
                 IsNewButtonPress(Buttons.LeftThumbstickDown, controllingPlayer, out playerIndex);
-        }
-
-        /// <summary>
-        /// Checks for a "pause the game" input action.
-        /// The controllingPlayer parameter specifies which player to read
-        /// input for. If this is null, it will accept input from any player.
-        /// </summary>
-        public bool IsPauseGame(PlayerIndex? controllingPlayer)
-        {
-            PlayerIndex playerIndex;
-
-            return IsNewKeyPress(Keys.Escape, controllingPlayer, out playerIndex) ||
-                IsNewButtonPress(Buttons.Back, controllingPlayer, out playerIndex) ||
-                IsNewButtonPress(Buttons.Start, controllingPlayer, out playerIndex);
         }
 
         #endregion

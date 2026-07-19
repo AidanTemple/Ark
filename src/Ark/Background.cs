@@ -28,7 +28,7 @@ namespace Ark
         {
             m_Viewport = graphicsDevice.Viewport;
 
-            Texture = ContentManager.Background_001;
+            Texture = ContentManager.GameBackground;
 
             if (Texture != null)
             {
