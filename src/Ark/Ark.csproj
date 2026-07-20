@@ -5,6 +5,7 @@
     <RootNamespace>Ark</RootNamespace>
     <AssemblyName>Ark</AssemblyName>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <Platforms>x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
