@@ -2,6 +2,12 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
+    <!-- net8.0-windows alone doesn't give the platform-compatibility
+         analyzer (CA1416) a minimum OS version, so it flags every
+         Windows-only MonoGame/GraphicsDeviceManager call as "reachable
+         on all platforms" even though this project only ever targets
+         Windows. -->
+    <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
     <RootNamespace>Ark</RootNamespace>
     <AssemblyName>Ark</AssemblyName>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
