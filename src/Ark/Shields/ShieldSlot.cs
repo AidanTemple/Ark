@@ -21,5 +21,17 @@ namespace Ark
         }
 
         #endregion
+
+        #region Helper Methods
+
+        // Swaps in a different shield -- e.g. upgrading from Basic to a
+        // higher tier. The old shield's remaining charge is not carried
+        // over; the new one starts at its own full capacity.
+        public void Equip(Shield shield)
+        {
+            Shield = shield;
+        }
+
+        #endregion
     }
 }

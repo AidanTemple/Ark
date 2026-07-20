@@ -17,7 +17,7 @@ namespace Ark
         private Rectangle m_BoundingRect;
 
         private List<WeaponSlot> m_WeaponSlots;
-        private List<ShieldSlot> m_ShieldSlots;
+        private ShieldSlot m_ShieldSlot;
 
         private GamePadState m_PreviousGamePadState;
 
@@ -34,24 +34,9 @@ namespace Ark
 
         public float Health { get; set; }
 
-        // Aggregated across slots so the HUD doesn't care how many shields
-        // the ship mounts -- with one Basic slot today this is just that
-        // shield's own percentage.
         public float ShieldPercent
         {
-            get
-            {
-                float capacity = 0;
-                float current = 0;
-
-                foreach (ShieldSlot slot in m_ShieldSlots)
-                {
-                    capacity += slot.Shield.Capacity;
-                    current += slot.Shield.Current;
-                }
-
-                return capacity > 0 ? (current / capacity) * 100f : 0f;
-            }
+            get { return m_ShieldSlot.Shield.Percent; }
         }
 
         private Vector2 Center { get; set; }
@@ -110,10 +95,9 @@ namespace Ark
                 new WeaponSlot(new GravityBombWeapon(), Buttons.Y),
             };
 
-            m_ShieldSlots = new List<ShieldSlot>
-            {
-                new ShieldSlot(new Shield(ShieldTier.Basic)),
-            };
+            // Default loadout is Basic -- swap to a higher tier later via
+            // m_ShieldSlot.Equip(new Shield(ShieldTier.Advanced)) etc.
+            m_ShieldSlot = new ShieldSlot(new Shield(ShieldTier.Basic));
         }
 
         #endregion
@@ -129,10 +113,7 @@ namespace Ark
             m_BoundingRect.X = (int)Position.X - (int)Origin.X;
             m_BoundingRect.Y = (int)Position.Y - (int)Origin.Y;
 
-            foreach (ShieldSlot slot in m_ShieldSlots)
-            {
-                slot.Shield.Update(gameTime);
-            }
+            m_ShieldSlot.Shield.Update(gameTime);
         }
 
         // Separate from Update(GameTime) because Sprite's Update signature is
@@ -177,16 +158,13 @@ namespace Ark
             Position = new Vector2(m_Viewport.Width / 2, m_Viewport.Height - Height);
         }
 
-        // The single entry point for anything hurting the ship -- shields
-        // soak first, and Health is only reduced by whatever gets past
-        // every slot. Callers must not subtract Health directly, or the
-        // shield (and its repair-delay timer) is silently bypassed.
+        // The single entry point for anything hurting the ship -- the shield
+        // soaks first, and Health is only reduced by whatever gets past it.
+        // Callers must not subtract Health directly, or the shield (and its
+        // repair-delay timer) is silently bypassed.
         public void TakeDamage(float damage)
         {
-            foreach (ShieldSlot slot in m_ShieldSlots)
-            {
-                damage = slot.Shield.Absorb(damage);
-            }
+            damage = m_ShieldSlot.Shield.Absorb(damage);
 
             if (damage > 0)
             {
