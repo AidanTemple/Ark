@@ -16,6 +16,7 @@ namespace Ark
         private List<Player> m_Players;
 
         private WaveManager m_WaveManager;
+        private AsteroidManager m_AsteroidManager;
 
         private StatusBar m_HealthBar;
 
@@ -68,6 +69,7 @@ namespace Ark
             m_Players = new List<Player> { new Player(SceneManager.GraphicsDevice, ControllingPlayer ?? PlayerIndex.One) };
 
             m_WaveManager = new WaveManager(SceneManager.GraphicsDevice, ContentManager.Enemy, 24);
+            m_AsteroidManager = new AsteroidManager(SceneManager.GraphicsDevice);
 
             m_HealthBar = new StatusBar();
             m_HealthBar.Percent = m_Players[0].Health;
@@ -124,14 +126,16 @@ namespace Ark
                 {
                     player.Update(gameTime);
 
-                    // Separate call because weapons need the current enemy list to
-                    // resolve hits/effects, and Sprite.Update's signature can't
-                    // carry it -- keep this before WaveManager.Update so damage
-                    // resolves against enemies' pre-movement positions this frame.
-                    player.UpdateWeapons(gameTime, m_WaveManager.Enemies);
+                    // Separate call because weapons need the current enemy/asteroid
+                    // lists to resolve hits/effects, and Sprite.Update's signature
+                    // can't carry them -- keep this before WaveManager/AsteroidManager
+                    // Update so damage resolves against pre-movement positions
+                    // this frame.
+                    player.UpdateWeapons(gameTime, m_WaveManager.Enemies, m_AsteroidManager.Asteroids);
                 }
 
                 m_WaveManager.Update(gameTime);
+                m_AsteroidManager.Update(gameTime);
 
                 Particle.Update();
 
@@ -210,6 +214,35 @@ namespace Ark
                     }
                 }
             }
+
+            // foreach is safe here -- this loop only flips IsAlive/subtracts
+            // Health in place, it never appends to m_AsteroidManager.Asteroids.
+            foreach (Asteroid asteroid in m_AsteroidManager.Asteroids)
+            {
+                if (!asteroid.IsAlive)
+                {
+                    continue;
+                }
+
+                foreach (Player player in m_Players)
+                {
+                    if (Physics.Overlaps(asteroid.BoundingRect, player.BoundingRect))
+                    {
+                        // Destroyed on contact -- no fragmentation from this
+                        // path, only from weapon fire (TakeDamage).
+                        asteroid.IsAlive = false;
+                        player.Health -= asteroid.CollisionDamage;
+
+                        Vector2 position = new Vector2((int)asteroid.Position.X - (int)asteroid.Origin.X,
+                            (int)asteroid.Position.Y - (int)asteroid.Origin.Y);
+
+                        ParticleEffects.SpawnBurst(Particle, asteroid.Width, asteroid.Height, position, 120,
+                            Color.DarkSlateGray, Color.DarkRed, 100, ParticleType.Enemy);
+
+                        break;
+                    }
+                }
+            }
         }
 
         #endregion
@@ -230,6 +263,7 @@ namespace Ark
             }
 
             m_WaveManager.Draw(spriteBatch);
+            m_AsteroidManager.Draw(spriteBatch);
             Particle.Draw(SceneManager.SpriteBatch);
             m_HealthBar.Draw(SceneManager.SpriteBatch);
 

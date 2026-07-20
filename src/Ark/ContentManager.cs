@@ -57,6 +57,10 @@ namespace Ark
         public static Texture2D LineParticle { get; private set; }
         public static Texture2D StatusBar { get; private set; }
 
+        public static Texture2D AsteroidLarge { get; private set; }
+        public static Texture2D AsteroidMedium { get; private set; }
+        public static Texture2D AsteroidSmall { get; private set; }
+
         public static SpriteFont Game0Font { get; private set; }
         public static SpriteFont LargeFont { get; private set; }
         public static SpriteFont MediumFont { get; private set; }
@@ -72,6 +76,10 @@ namespace Ark
             EnemyLaser      = content.Load<Texture2D>("Textures/Enemy_Laser");
             LineParticle    = content.Load<Texture2D>("Textures/LineParticle");
             StatusBar       = content.Load<Texture2D>("Textures/StatusBar");
+
+            AsteroidLarge   = content.Load<Texture2D>("Textures/Asteroid_Large");
+            AsteroidMedium  = content.Load<Texture2D>("Textures/Asteroid_Medium");
+            AsteroidSmall   = content.Load<Texture2D>("Textures/Asteroid_Small");
 
             Game0Font       = content.Load<SpriteFont>("Fonts/game0");
             LargeFont       = content.Load<SpriteFont>("Fonts/LargeFont");
@@ -89,6 +97,10 @@ namespace Ark
             EnemyLaser = null;
             LineParticle = null;
             StatusBar = null;
+
+            AsteroidLarge = null;
+            AsteroidMedium = null;
+            AsteroidSmall = null;
 
             Game0Font = null;
             LargeFont = null;

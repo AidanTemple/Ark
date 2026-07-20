@@ -11,6 +11,7 @@ namespace Ark
         #region Properties
 
         public HashSet<Enemy> HitEnemies { get; private set; }
+        public HashSet<Asteroid> HitAsteroids { get; private set; }
 
         #endregion
 
@@ -20,6 +21,7 @@ namespace Ark
             : base(texture)
         {
             HitEnemies = new HashSet<Enemy>();
+            HitAsteroids = new HashSet<Asteroid>();
         }
 
         #endregion
@@ -31,6 +33,7 @@ namespace Ark
             base.Activate(position, velocity);
 
             HitEnemies.Clear();
+            HitAsteroids.Clear();
         }
 
         #endregion

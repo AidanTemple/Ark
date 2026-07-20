@@ -19,6 +19,18 @@ namespace Ark
             return !bounds.Contains((int)position.X, (int)position.Y);
         }
 
+        // For entities that legitimately live outside the tight viewport for
+        // a while (e.g. an asteroid spawned just off-screen, or one not yet
+        // drifted clear after being destroyed) -- inflates the bounds by
+        // margin on every side before testing.
+        public static bool IsOutOfBounds(Vector2 position, Rectangle bounds, int margin)
+        {
+            Rectangle inflated = bounds;
+            inflated.Inflate(margin, margin);
+
+            return !inflated.Contains((int)position.X, (int)position.Y);
+        }
+
         public static bool IsWithinRadius(Vector2 a, Vector2 b, float radius)
         {
             return Vector2.Distance(a, b) <= radius;
