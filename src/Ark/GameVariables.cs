@@ -62,5 +62,19 @@
         // despawned -- must be generous enough that one spawned just off an
         // edge isn't immediately killed by the same check.
         public static int AsteroidDespawnMargin = 80;
+
+        // Shields
+        // Seconds without taking ANY damage (shield or health) before the
+        // shield starts repairing.
+        public static float ShieldRepairDelay = 3.0f;
+
+        public static float ShieldCapacityBasic = 30f;
+        public static float ShieldReplenishRateBasic = 6f;
+
+        public static float ShieldCapacityAdvanced = 60f;
+        public static float ShieldReplenishRateAdvanced = 10f;
+
+        public static float ShieldCapacityElite = 100f;
+        public static float ShieldReplenishRateElite = 18f;
     }
 }

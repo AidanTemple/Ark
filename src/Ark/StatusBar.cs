@@ -34,6 +34,11 @@ namespace Ark
         public int Width { get; set; }
         public int Height { get; set; }
 
+        // Top-left corner of the bar on screen. Defaults to (0, 0), the
+        // position the health bar has always drawn at.
+        public int X { get; set; }
+        public int Y { get; set; }
+
         #endregion
 
         #region Initialisation
@@ -66,10 +71,10 @@ namespace Ark
 
         public void Draw(SpriteBatch spriteBatch)
         {
-            spriteBatch.Draw(m_Texture, new Rectangle(0, 0, Width, Height),
+            spriteBatch.Draw(m_Texture, new Rectangle(X, Y, Width, Height),
                 new Rectangle(0, 5, Width, Height), Color.Red);
 
-            spriteBatch.Draw(m_Texture, new Rectangle(0, 0, (int)(Width * ((double)m_Percent / 100)),
+            spriteBatch.Draw(m_Texture, new Rectangle(X, Y, (int)(Width * ((double)m_Percent / 100)),
                 Height), new Rectangle(0, 5, Width, 5), m_Color);
         }
 
