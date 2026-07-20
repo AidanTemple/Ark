@@ -19,6 +19,7 @@ namespace Ark
         private AsteroidManager m_AsteroidManager;
 
         private StatusBar m_HealthBar;
+        private StatusBar m_ShieldBar;
 
         private Countdown m_Countdown;
 
@@ -73,6 +74,12 @@ namespace Ark
 
             m_HealthBar = new StatusBar();
             m_HealthBar.Percent = m_Players[0].Health;
+
+            // Shield bar sits directly under the health bar, tinted blue.
+            m_ShieldBar = new StatusBar();
+            m_ShieldBar.Y = m_HealthBar.Height + 4;
+            m_ShieldBar.Color = new Color(40, 110, 200);
+            m_ShieldBar.Percent = m_Players[0].ShieldPercent;
 
             // Keep the existing manager across resets instead of replacing it --
             // particles already age themselves out via Update(), and replacing
@@ -146,6 +153,9 @@ namespace Ark
                 m_HealthBar.Percent = m_Players[0].Health;
                 m_HealthBar.Update();
 
+                m_ShieldBar.Percent = m_Players[0].ShieldPercent;
+                m_ShieldBar.Update();
+
                 if (m_Players[0].Health <= 0 && m_Players[0].IsAlive)
                 {
                     Reset();
@@ -202,7 +212,7 @@ namespace Ark
                         if (Physics.Overlaps(laser.BoundingRect, player.BoundingRect))
                         {
                             laser.IsAlive = false;
-                            player.Health -= laser.Damage;
+                            player.TakeDamage(laser.Damage);
 
                             break;
                         }
@@ -229,9 +239,9 @@ namespace Ark
                     if (Physics.Overlaps(asteroid.BoundingRect, player.BoundingRect))
                     {
                         // Destroyed on contact -- no fragmentation from this
-                        // path, only from weapon fire (TakeDamage).
+                        // path, only from weapon fire (Asteroid.TakeDamage).
                         asteroid.IsAlive = false;
-                        player.Health -= asteroid.CollisionDamage;
+                        player.TakeDamage(asteroid.CollisionDamage);
 
                         Vector2 position = new Vector2((int)asteroid.Position.X - (int)asteroid.Origin.X,
                             (int)asteroid.Position.Y - (int)asteroid.Origin.Y);
@@ -266,6 +276,7 @@ namespace Ark
             m_AsteroidManager.Draw(spriteBatch);
             Particle.Draw(SceneManager.SpriteBatch);
             m_HealthBar.Draw(SceneManager.SpriteBatch);
+            m_ShieldBar.Draw(SceneManager.SpriteBatch);
 
             Vector2 size = ContentManager.Game0Font.MeasureString(m_WaveManager.WaveNumber.ToString());
 
