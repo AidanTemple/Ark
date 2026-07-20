@@ -21,6 +21,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Existing art has no source files in the repo (only the precompiled
+         .xnb output survived from before this project's history), so it's
+         still just copied as-is rather than run through the pipeline. -->
     <None Include="Content\**\*.xnb" CopyToOutputDirectory="PreserveNewest" />
+
+    <!-- New assets: MonoGame.Content.Builder.Task (referenced above) builds
+         this at compile time from source images/audio/fonts listed in it,
+         same output convention (Content/) as the precompiled .xnb above. -->
+    <MonoGameContentReference Include="Content\Content.mgcb" />
   </ItemGroup>
 </Project>

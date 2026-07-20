@@ -1,0 +1,34 @@
+
+#----------------------------- Global Properties ----------------------------#
+
+/outputDir:bin/$(Platform)
+/intermediateDir:obj/$(Platform)
+/platform:Windows
+/config:
+/profile:Reach
+/compress:False
+
+#-------------------------------- References --------------------------------#
+
+
+#---------------------------------- Content ----------------------------------#
+
+# New source assets go here, built via the MonoGame Content Pipeline (MGCB)
+# at compile time -- unlike the rest of Content/, which is precompiled .xnb
+# checked directly into the repo (no source art exists for it, so it's left
+# alone and still just copied by Ark.csproj's wildcard <None> item).
+#
+# Example, once real art exists at these paths:
+#
+# #begin Textures/Asteroid_Large.png
+# /importer:TextureImporter
+# /processor:TextureProcessor
+# /processorParam:ColorKeyColor=255,0,255,255
+# /processorParam:ColorKeyEnabled=True
+# /processorParam:GenerateMipmaps=False
+# /processorParam:PremultiplyAlpha=True
+# /processorParam:ResizeToPowerOfTwo=False
+# /processorParam:MakeSquare=False
+# /processorParam:TextureFormat=Color
+# /build:Textures/Asteroid_Large.png
+# #end
