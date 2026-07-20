@@ -105,13 +105,14 @@ namespace Ark
         }
 
         // Separate from Update(GameTime) because Sprite's Update signature is
-        // fixed and has no way to carry the current enemy list, which weapons
-        // need to resolve hits/effects against. Called explicitly by GameScene.
-        public void UpdateWeapons(GameTime gameTime, List<Enemy> enemies)
+        // fixed and has no way to carry the current enemy/asteroid lists,
+        // which weapons need to resolve hits/effects against. Called
+        // explicitly by GameScene.
+        public void UpdateWeapons(GameTime gameTime, List<Enemy> enemies, List<Asteroid> asteroids)
         {
             foreach (WeaponSlot slot in m_WeaponSlots)
             {
-                slot.Weapon.Update(gameTime, m_ViewportRect, enemies);
+                slot.Weapon.Update(gameTime, m_ViewportRect, enemies, asteroids);
             }
         }
 

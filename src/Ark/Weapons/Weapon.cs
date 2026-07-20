@@ -80,7 +80,7 @@ namespace Ark
             return false;
         }
 
-        public void Update(GameTime gameTime, Rectangle viewportBounds, List<Enemy> enemies)
+        public void Update(GameTime gameTime, Rectangle viewportBounds, List<Enemy> enemies, List<Asteroid> asteroids)
         {
             m_FireTimer += (float)gameTime.ElapsedGameTime.TotalSeconds;
 
@@ -99,16 +99,17 @@ namespace Ark
                     continue;
                 }
 
-                ResolveEffects(projectile, gameTime, enemies);
+                ResolveEffects(projectile, gameTime, enemies, asteroids);
             }
         }
 
         /// <summary>
         /// Called every frame for every currently-alive projectile this weapon owns --
         /// not just on the frame it first hits something. Implementations decide how
-        /// (and whether) to interact with the enemy list and when to kill the projectile.
+        /// (and whether) to interact with the enemy/asteroid lists and when to kill
+        /// the projectile.
         /// </summary>
-        protected abstract void ResolveEffects(Projectile projectile, GameTime gameTime, List<Enemy> enemies);
+        protected abstract void ResolveEffects(Projectile projectile, GameTime gameTime, List<Enemy> enemies, List<Asteroid> asteroids);
 
         // Shared by every weapon's hit-resolution: apply this weapon's damage,
         // award score, and spawn the death burst if that damage was lethal.
@@ -125,6 +126,29 @@ namespace Ark
                 ParticleEffects.SpawnBurst(GameScene.Particle, enemy.Width, enemy.Height, position, 120,
                     Color.DarkSlateGray, Color.DarkRed, 100, ParticleType.Enemy);
             }
+        }
+
+        // Mirrors ApplyDamage(Enemy) but asteroids don't just die -- they
+        // shrink a tier (or, at Small, die) and TakeDamage returns the new
+        // fragment when that happens. Callers are responsible for adding a
+        // non-null return value into their own asteroid list -- see the
+        // per-weapon collection-mutation-safety notes at each call site.
+        protected Asteroid ApplyAsteroidDamage(Asteroid asteroid, Vector2 impactDirection)
+        {
+            GameVariables.Score += 1;
+
+            Asteroid fragment = asteroid.TakeDamage(Damage, impactDirection);
+
+            if (!asteroid.IsAlive)
+            {
+                Vector2 position = new Vector2((int)asteroid.Position.X - (int)asteroid.Origin.X,
+                    (int)asteroid.Position.Y - (int)asteroid.Origin.Y);
+
+                ParticleEffects.SpawnBurst(GameScene.Particle, asteroid.Width, asteroid.Height, position, 120,
+                    Color.DarkSlateGray, Color.DarkRed, 100, ParticleType.Enemy);
+            }
+
+            return fragment;
         }
 
         #endregion
