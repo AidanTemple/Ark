@@ -1,7 +1,6 @@
 ﻿#region Using Statements
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input.Touch;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -57,9 +56,6 @@ namespace Ark
         public SceneManager(Game game)
             : base(game)
         {
-            // we must set EnabledGestures before we can query for them, but
-            // we don't assume the game wants to read them.
-            TouchPanel.EnabledGestures = GestureType.None;
         }
 
         /// <summary>
@@ -199,9 +195,6 @@ namespace Ark
             }
 
             m_Scenes.Add(scene);
-
-            // update the TouchPanel to respond to gestures this Scene is interested in
-            TouchPanel.EnabledGestures = scene.EnabledGestures;
         }
 
 
@@ -221,13 +214,6 @@ namespace Ark
 
             m_Scenes.Remove(scene);
             m_ScenesToUpdate.Remove(scene);
-
-            // if there is a Scene still in the manager, update TouchPanel
-            // to respond to gestures that Scene is interested in.
-            if (m_Scenes.Count > 0)
-            {
-                TouchPanel.EnabledGestures = m_Scenes[m_Scenes.Count - 1].EnabledGestures;
-            }
         }
 
 

@@ -20,6 +20,13 @@ namespace Ark
         private ShieldSlot m_ShieldSlot;
 
         private GamePadState m_PreviousGamePadState;
+        private KeyboardState m_PreviousKeyboardState;
+
+        // Which weapon slot Space fires -- the gamepad has 3 independent
+        // triggers (A/X/Y), but the keyboard only has one fire key, so 1/2/3
+        // pick which slot Space targets. Index order matches the slot list
+        // below (Laser/Railgun/GravityBomb), same order as A/X/Y.
+        private int m_SelectedWeaponIndex;
 
         #endregion
 
@@ -60,6 +67,11 @@ namespace Ark
             // is constructed (e.g. still holding A from selecting "New Game")
             // reads as a fresh press on the very first UpdateGamePad call.
             m_PreviousGamePadState = GamePad.GetState(Index);
+
+            // Same reasoning as the gamepad seed above -- a key already held
+            // this frame (e.g. Enter, still down from selecting "New Game")
+            // shouldn't read as a fresh press on the first UpdateKeyboard call.
+            m_PreviousKeyboardState = Keyboard.GetState();
 
             m_Viewport = graphicsDevice.Viewport;
 
@@ -107,6 +119,7 @@ namespace Ark
         public override void Update(GameTime gameTime)
         {
             UpdateGamePad(gameTime);
+            UpdateKeyboard(gameTime);
 
             Position = Physics.ClampToBounds(Position, m_ViewportRect, Width / 2, Height / 2);
 
@@ -147,6 +160,53 @@ namespace Ark
             }
 
             m_PreviousGamePadState = gamePadState;
+        }
+
+        private void UpdateKeyboard(GameTime gameTime)
+        {
+            KeyboardState keyboardState = Keyboard.GetState();
+
+            float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            Vector2 direction = Vector2.Zero;
+
+            if (keyboardState.IsKeyDown(Keys.W)) { direction.Y -= 1; }
+            if (keyboardState.IsKeyDown(Keys.S)) { direction.Y += 1; }
+            if (keyboardState.IsKeyDown(Keys.A)) { direction.X -= 1; }
+            if (keyboardState.IsKeyDown(Keys.D)) { direction.X += 1; }
+
+            if (direction != Vector2.Zero)
+            {
+                // Normalize so a diagonal (two keys at once) isn't faster
+                // than a single-axis press.
+                direction.Normalize();
+
+                Position += direction * GameVariables.PlayerSpeed * deltaTime;
+            }
+
+            if (IsNewKeyPress(keyboardState, Keys.D1))
+            {
+                m_SelectedWeaponIndex = 0;
+            }
+            else if (IsNewKeyPress(keyboardState, Keys.D2))
+            {
+                m_SelectedWeaponIndex = 1;
+            }
+            else if (IsNewKeyPress(keyboardState, Keys.D3))
+            {
+                m_SelectedWeaponIndex = 2;
+            }
+
+            if (IsNewKeyPress(keyboardState, Keys.Space))
+            {
+                m_WeaponSlots[m_SelectedWeaponIndex].Weapon.TryFire(Position);
+            }
+
+            m_PreviousKeyboardState = keyboardState;
+        }
+
+        private bool IsNewKeyPress(KeyboardState keyboardState, Keys key)
+        {
+            return keyboardState.IsKeyDown(key) && m_PreviousKeyboardState.IsKeyUp(key);
         }
 
         #endregion
