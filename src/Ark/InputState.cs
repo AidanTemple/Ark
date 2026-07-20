@@ -1,8 +1,6 @@
 #region Using Statements
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.Input.Touch;
-using System.Collections.Generic;
 #endregion
 
 namespace Ark
@@ -20,10 +18,6 @@ namespace Ark
 
         public KeyboardState m_CurrentKeyboardState;
         public KeyboardState m_PreviousKeyboardState;
-
-        public TouchCollection m_TouchState;
-
-        public readonly List<GestureSample> m_Gestures = new List<GestureSample>();
 
         #endregion
 
@@ -59,15 +53,6 @@ namespace Ark
 
             m_PreviousKeyboardState = m_CurrentKeyboardState;
             m_CurrentKeyboardState = Keyboard.GetState();
-
-            m_TouchState = TouchPanel.GetState();
-
-            m_Gestures.Clear();
-
-            while(TouchPanel.IsGestureAvailable)
-            {
-                m_Gestures.Add(TouchPanel.ReadGesture());
-            }
         }
 
         #endregion

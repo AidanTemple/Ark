@@ -2,7 +2,6 @@
 using System;
 using System.IO;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input.Touch;
 using Microsoft.Xna.Framework.Graphics;
 #endregion
 
@@ -38,8 +37,6 @@ namespace Ark
         private SceneManager m_Manager;
 
         private PlayerIndex? m_PlayerIndex;
-
-        private GestureType m_EnabledGestures = GestureType.None;
 
         #endregion
 
@@ -105,20 +102,6 @@ namespace Ark
         {
             get { return m_PlayerIndex; }
             internal set { m_PlayerIndex = value; }
-        }
-
-        public GestureType EnabledGestures
-        {
-            get { return m_EnabledGestures; }
-            protected set
-            {
-                m_EnabledGestures = value;
-
-                if (m_State == SceneState.Active)
-                {
-                    TouchPanel.EnabledGestures = value;
-                }
-            }
         }
 
         public bool IsSerializable
