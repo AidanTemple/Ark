@@ -10,7 +10,7 @@
         // "Enemy AI" and "Player movement" sections below for the rest of
         // that retuning.
         public static float EnemySpeed = 0.7f;
-        public static float PlayerSpeed = 120.0f;
+        public static float PlayerSpeed = 60.0f;
 
         public static float BackgroundScrollSpeed = 30.0f;
         public static float LaserDamage = 0.5f;
@@ -125,7 +125,17 @@
         public static float PlayerSlowRadius = 100f;
 
         public static float PlayerTurnRateDegrees = 90f;
-        public static float PlayerAcceleration = 200f;
+
+        // Thrust always fires along the ship's current heading (see
+        // Player.UpdateSteering), not straight at the destination -- this
+        // controls how briskly it can build up to (and brake back down
+        // from) PlayerSpeed along that heading.
+        public static float PlayerAcceleration = 90f;
+
+        // Seconds for engine power to ramp from 0 to full, and back down
+        // again once thrust is no longer commanded -- the "spool up" delay
+        // before the ship actually starts responding to a new destination.
+        public static float PlayerEngineSpoolUpTime = 0.8f;
 
         // Flat per-frame velocity decay while coasting to a stop at the
         // destination.

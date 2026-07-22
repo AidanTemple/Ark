@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System;
 using System.Collections.Generic;
 #endregion
 
@@ -36,6 +37,10 @@ namespace Ark
         private Vector2 m_Cursor;
         private Vector2 m_Destination;
         private Vector2 m_Velocity;
+
+        // 0 (idle) to 1 (full thrust) -- ramps gradually rather than
+        // snapping, see UpdateSteering.
+        private float m_EnginePower;
 
         #endregion
 
@@ -210,8 +215,14 @@ namespace Ark
         }
 
         // Ship-like steering toward m_Destination: turns to face it at a
-        // limited rate and eases into/out of motion with real acceleration
-        // and drag, rather than snapping directly to an input direction.
+        // limited rate, and thrust always fires along the ship's CURRENT
+        // heading rather than straight at the destination -- so it arcs
+        // into its approach as it turns, like a vessel with a single
+        // forward thruster, instead of crabbing sideways while its nose
+        // catches up to a straight-line velocity. Engine power spools up
+        // gradually rather than snapping to full thrust, and eases back
+        // down as the ship nears arrival so it bleeds off speed like
+        // coasting in space rather than stopping dead.
         private void UpdateSteering(GameTime gameTime)
         {
             float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -219,22 +230,38 @@ namespace Ark
             Vector2 toDestination = m_Destination - Position;
             float distance = toDestination.Length();
 
-            if (distance > GameVariables.PlayerArrivalRadius)
+            bool isThrusting = distance > GameVariables.PlayerArrivalRadius;
+
+            if (isThrusting)
             {
                 float desiredHeading = toDestination.ToAngle();
                 float turnDelta = MathHelper.WrapAngle(desiredHeading - Rotation);
                 float maxTurn = MathHelper.ToRadians(GameVariables.PlayerTurnRateDegrees) * deltaTime;
 
                 Rotation = MathHelper.WrapAngle(Rotation + MathHelper.Clamp(turnDelta, -maxTurn, maxTurn));
+            }
 
+            // Engine power eases toward full (thrusting) or idle (coasting)
+            // instead of snapping -- this is the "spool up" delay before
+            // the ship actually starts responding to a new destination,
+            // and an equivalent spool-down once thrust is no longer
+            // commanded. Runs every frame (not just while isThrusting) so
+            // it winds back down on arrival too.
+            float targetEnginePower = isThrusting ? 1f : 0f;
+            float spoolStep = deltaTime / GameVariables.PlayerEngineSpoolUpTime;
+
+            m_EnginePower += MathHelper.Clamp(targetEnginePower - m_EnginePower, -spoolStep, spoolStep);
+
+            if (isThrusting)
+            {
                 // Arrive behavior: ease off the desired speed as it nears
-                // the destination so it settles in instead of overshooting
-                // and oscillating around it.
+                // the destination so it bleeds down like coasting in space,
+                // rather than thrusting at full power right up until it
+                // overshoots.
                 float speedFactor = MathHelper.Clamp(distance / GameVariables.PlayerSlowRadius, 0f, 1f);
 
-                Vector2 desiredVelocity = toDestination;
-                desiredVelocity.Normalize();
-                desiredVelocity *= GameVariables.PlayerSpeed * speedFactor;
+                Vector2 forward = new Vector2((float)Math.Cos(Rotation), (float)Math.Sin(Rotation));
+                Vector2 desiredVelocity = forward * GameVariables.PlayerSpeed * speedFactor * m_EnginePower;
 
                 Vector2 steering = desiredVelocity - m_Velocity;
                 float maxAccel = GameVariables.PlayerAcceleration * deltaTime;
