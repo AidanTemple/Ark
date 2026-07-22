@@ -12,7 +12,6 @@ namespace Ark
     {
         #region Private Members
 
-        private Background m_Background;
         private List<Player> m_Players;
 
         private WaveManager m_WaveManager;
@@ -57,8 +56,6 @@ namespace Ark
         private void Reset()
         {
             GameVariables.Score = 0;
-
-            m_Background = new Background(SceneManager.GraphicsDevice);
 
             m_Countdown = new Countdown();
 
@@ -122,7 +119,6 @@ namespace Ark
                 m_ReturnToMenu = false;
             }
 
-            m_Background.Update(gameTime);
             m_Countdown.Update(gameTime);
 
             if (!m_Countdown.IsCountingDown)
@@ -279,8 +275,6 @@ namespace Ark
             SceneManager.GraphicsDevice.Clear(ClearOptions.Target, Color.Black, 0, 0);
 
             spriteBatch.Begin();
-
-            m_Background.Draw(SceneManager.SpriteBatch);
 
             foreach (Player player in m_Players)
             {

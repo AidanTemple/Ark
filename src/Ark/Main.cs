@@ -27,10 +27,12 @@ namespace Ark
             m_Graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
 
-            // Fixed-size windowed 480x800 canvas -- matches the game's original
-            // resolution, which all gameplay/UI coordinates are hardcoded around.
-            this.m_Graphics.PreferredBackBufferWidth = 480;
-            this.m_Graphics.PreferredBackBufferHeight = 800;
+            // Fixed-size windowed 1920x1200 canvas -- raised from the original
+            // 480x800 for now. Gameplay/UI coordinates elsewhere (enemy spawn
+            // bounds, menu/HUD positions, etc.) are still hardcoded around the
+            // old 480-wide canvas and have NOT been rescaled to match.
+            this.m_Graphics.PreferredBackBufferWidth = 1920;
+            this.m_Graphics.PreferredBackBufferHeight = 1200;
             this.m_Graphics.IsFullScreen = false;
             this.m_Graphics.ApplyChanges();
 

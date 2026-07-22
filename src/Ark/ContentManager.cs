@@ -48,7 +48,6 @@ namespace Ark
         #region Game
 
         public static Texture2D Player { get; private set; }
-        public static Texture2D GameBackground { get; private set; }
         public static Texture2D Missile { get; private set; }
         public static Texture2D Torpedo { get; private set; }
         public static Texture2D Pulse { get; private set; }
@@ -68,7 +67,6 @@ namespace Ark
         public static void LoadGame(Microsoft.Xna.Framework.Content.ContentManager content)
         {
             Player          = content.Load<Texture2D>("Textures/Player");
-            GameBackground  = content.Load<Texture2D>("Textures/Backgrounds/background1");
             Missile         = content.Load<Texture2D>("Textures/Missile");
             Torpedo         = content.Load<Texture2D>("Textures/Torpedo");
             Pulse           = content.Load<Texture2D>("Textures/Pulse");
@@ -89,7 +87,6 @@ namespace Ark
         public static void UnloadGame()
         {
             Player = null;
-            GameBackground = null;
             Missile = null;
             Torpedo = null;
             Pulse = null;
