@@ -90,14 +90,14 @@ namespace Ark
 
         #region Update
 
-        public void Update(GameTime gameTime)
+        public void Update(GameTime gameTime, List<Projectile> threats)
         {
             if (m_Waves.Count == 0)
             {
                 return;
             }
 
-            CurrentWave.Update(gameTime);
+            CurrentWave.Update(gameTime, threats);
 
             if(CurrentWave.IsWaveComplete)
             {

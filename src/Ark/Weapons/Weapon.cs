@@ -34,6 +34,25 @@ namespace Ark
             get { return true; }
         }
 
+        // Whether enemies should treat this weapon's projectiles as
+        // something to dodge. Public (unlike KillWhenOutOfBounds) because
+        // external code -- Player.GetEvadableProjectiles -- needs to read
+        // it, not just Weapon's own subclasses.
+        public virtual bool IsEvadable
+        {
+            get { return true; }
+        }
+
+        // Read-only exposure of the pool for the same reason -- external
+        // code needs to see which projectiles are currently alive to build
+        // the enemy threat list. Returns the live backing array, not a
+        // defensive copy, consistent with WaveManager.Enemies/
+        // AsteroidManager.Asteroids already doing the same for their pools.
+        public Projectile[] Projectiles
+        {
+            get { return m_Projectiles; }
+        }
+
         #endregion
 
         #region Initialisation

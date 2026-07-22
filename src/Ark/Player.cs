@@ -21,12 +21,21 @@ namespace Ark
 
         private GamePadState m_PreviousGamePadState;
         private KeyboardState m_PreviousKeyboardState;
+        private MouseState m_PreviousMouseState;
 
         // Which weapon slot Space fires -- the gamepad has 3 independent
-        // triggers (A/X/Y), but the keyboard only has one fire key, so 1/2/3
+        // triggers (B/X/Y), but the keyboard only has one fire key, so 1/2/3
         // pick which slot Space targets. Index order matches the slot list
-        // below (Laser/Railgun/GravityBomb), same order as A/X/Y.
+        // below (Laser/Railgun/GravityBomb).
         private int m_SelectedWeaponIndex;
+
+        // Point-to-move helm control: m_Cursor is a shared on-screen
+        // reticle steered by either the mouse or the gamepad's left stick;
+        // a click/A-press locks its current position in as m_Destination,
+        // which the ship then turns to face and accelerates toward.
+        private Vector2 m_Cursor;
+        private Vector2 m_Destination;
+        private Vector2 m_Velocity;
 
         #endregion
 
@@ -73,6 +82,12 @@ namespace Ark
             // shouldn't read as a fresh press on the first UpdateKeyboard call.
             m_PreviousKeyboardState = Keyboard.GetState();
 
+            // Same reasoning again -- without this, frame one would almost
+            // always read as "the mouse just moved" (comparing against the
+            // struct default position of (0,0)), snapping m_Cursor away
+            // from the ship before the player has done anything.
+            m_PreviousMouseState = Mouse.GetState();
+
             m_Viewport = graphicsDevice.Viewport;
 
             m_ViewportRect = new Rectangle(m_Viewport.X, m_Viewport.Y,
@@ -97,12 +112,21 @@ namespace Ark
 
                 PutInStartPosition();
 
+                // Start already "arrived" at spawn -- otherwise the ship
+                // would immediately steer toward Vector2.Zero (top-left).
+                m_Destination = Position;
+                m_Cursor = Position;
+
                 IsAlive = true;
             }
 
+            // Laser moved off A (its default elsewhere in this project's
+            // history) so A is free to mean "confirm the cursor's position
+            // as the ship's destination" -- B is otherwise unused during
+            // gameplay (only relevant to menu-cancel in Menu/MenuScene).
             m_WeaponSlots = new List<WeaponSlot>
             {
-                new WeaponSlot(new LaserWeapon(), Buttons.A),
+                new WeaponSlot(new LaserWeapon(), Buttons.B),
                 new WeaponSlot(new RailgunWeapon(), Buttons.X),
                 new WeaponSlot(new GravityBombWeapon(), Buttons.Y),
             };
@@ -118,6 +142,8 @@ namespace Ark
 
         public override void Update(GameTime gameTime)
         {
+            UpdateCursor(gameTime);
+            UpdateSteering(gameTime);
             UpdateGamePad(gameTime);
             UpdateKeyboard(gameTime);
 
@@ -141,15 +167,97 @@ namespace Ark
             }
         }
 
+        // Point-to-move targeting: the mouse and the gamepad's left stick
+        // share one on-screen cursor. The mouse is authoritative the
+        // instant its OS position changes; otherwise the stick is free to
+        // nudge the cursor -- so the two input methods don't fight over it
+        // every frame.
+        private void UpdateCursor(GameTime gameTime)
+        {
+            float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+            MouseState mouseState = Mouse.GetState();
+            GamePadState gamePadState = GamePad.GetState(Index);
+
+            if (mouseState.Position != m_PreviousMouseState.Position)
+            {
+                m_Cursor = new Vector2(mouseState.Position.X, mouseState.Position.Y);
+            }
+            else
+            {
+                Vector2 thumbstick = gamePadState.ThumbSticks.Left;
+
+                if (thumbstick != Vector2.Zero)
+                {
+                    // Left stick Y is +1 up / -1 down; screen space Y grows
+                    // downward, so negate.
+                    m_Cursor += new Vector2(thumbstick.X, -thumbstick.Y) * GameVariables.CursorSpeed * deltaTime;
+                    m_Cursor = Physics.ClampToBounds(m_Cursor, m_ViewportRect, 0, 0);
+                }
+            }
+
+            if (mouseState.LeftButton == ButtonState.Pressed && m_PreviousMouseState.LeftButton == ButtonState.Released)
+            {
+                m_Destination = m_Cursor;
+            }
+
+            if (gamePadState.IsButtonDown(Buttons.A) && m_PreviousGamePadState.IsButtonUp(Buttons.A))
+            {
+                m_Destination = m_Cursor;
+            }
+
+            m_PreviousMouseState = mouseState;
+        }
+
+        // Ship-like steering toward m_Destination: turns to face it at a
+        // limited rate and eases into/out of motion with real acceleration
+        // and drag, rather than snapping directly to an input direction.
+        private void UpdateSteering(GameTime gameTime)
+        {
+            float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+            Vector2 toDestination = m_Destination - Position;
+            float distance = toDestination.Length();
+
+            if (distance > GameVariables.PlayerArrivalRadius)
+            {
+                float desiredHeading = toDestination.ToAngle();
+                float turnDelta = MathHelper.WrapAngle(desiredHeading - Rotation);
+                float maxTurn = MathHelper.ToRadians(GameVariables.PlayerTurnRateDegrees) * deltaTime;
+
+                Rotation = MathHelper.WrapAngle(Rotation + MathHelper.Clamp(turnDelta, -maxTurn, maxTurn));
+
+                // Arrive behavior: ease off the desired speed as it nears
+                // the destination so it settles in instead of overshooting
+                // and oscillating around it.
+                float speedFactor = MathHelper.Clamp(distance / GameVariables.PlayerSlowRadius, 0f, 1f);
+
+                Vector2 desiredVelocity = toDestination;
+                desiredVelocity.Normalize();
+                desiredVelocity *= GameVariables.PlayerSpeed * speedFactor;
+
+                Vector2 steering = desiredVelocity - m_Velocity;
+                float maxAccel = GameVariables.PlayerAcceleration * deltaTime;
+
+                if (steering.Length() > maxAccel)
+                {
+                    steering.Normalize();
+                    steering *= maxAccel;
+                }
+
+                m_Velocity += steering;
+            }
+            else
+            {
+                m_Velocity *= GameVariables.PlayerDragFactor;
+            }
+
+            Position += m_Velocity * deltaTime;
+        }
+
         private void UpdateGamePad(GameTime gameTime)
         {
             GamePadState gamePadState = GamePad.GetState(Index);
-
-            float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            Vector2 thumbstick = gamePadState.ThumbSticks.Left;
-
-            // Left stick Y is +1 up / -1 down; screen space Y grows downward, so negate.
-            Position += new Vector2(thumbstick.X, -thumbstick.Y) * GameVariables.PlayerSpeed * deltaTime;
 
             foreach (WeaponSlot slot in m_WeaponSlots)
             {
@@ -165,23 +273,6 @@ namespace Ark
         private void UpdateKeyboard(GameTime gameTime)
         {
             KeyboardState keyboardState = Keyboard.GetState();
-
-            float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            Vector2 direction = Vector2.Zero;
-
-            if (keyboardState.IsKeyDown(Keys.W)) { direction.Y -= 1; }
-            if (keyboardState.IsKeyDown(Keys.S)) { direction.Y += 1; }
-            if (keyboardState.IsKeyDown(Keys.A)) { direction.X -= 1; }
-            if (keyboardState.IsKeyDown(Keys.D)) { direction.X += 1; }
-
-            if (direction != Vector2.Zero)
-            {
-                // Normalize so a diagonal (two keys at once) isn't faster
-                // than a single-axis press.
-                direction.Normalize();
-
-                Position += direction * GameVariables.PlayerSpeed * deltaTime;
-            }
 
             if (IsNewKeyPress(keyboardState, Keys.D1))
             {
@@ -230,6 +321,31 @@ namespace Ark
             {
                 Health -= damage;
             }
+        }
+
+        // The evadable subset of this ship's live projectiles (Gravity
+        // Bomb excluded -- see Weapon.IsEvadable) for enemies to react to.
+        public List<Projectile> GetEvadableProjectiles()
+        {
+            List<Projectile> projectiles = new List<Projectile>();
+
+            foreach (WeaponSlot slot in m_WeaponSlots)
+            {
+                if (!slot.Weapon.IsEvadable)
+                {
+                    continue;
+                }
+
+                foreach (Projectile projectile in slot.Weapon.Projectiles)
+                {
+                    if (projectile.IsAlive)
+                    {
+                        projectiles.Add(projectile);
+                    }
+                }
+            }
+
+            return projectiles;
         }
 
         #endregion

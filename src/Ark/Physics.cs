@@ -58,5 +58,25 @@ namespace Ark
 
             return new Vector2(x, y);
         }
+
+        // Standard closest-point-on-a-ray projection: how far along
+        // origin + velocity*t the moving point comes closest to target.
+        // Returned in whatever units velocity already is (this codebase's
+        // velocities are per-frame deltas, so this comes out in frames).
+        // Clamped to >= 0 so a target the ray has already passed (or a
+        // stationary velocity) doesn't report a phantom future approach.
+        public static float TimeToClosestApproach(Vector2 origin, Vector2 velocity, Vector2 target)
+        {
+            float speedSquared = velocity.LengthSquared();
+
+            if (speedSquared < 0.0001f)
+            {
+                return 0f;
+            }
+
+            float t = Vector2.Dot(target - origin, velocity) / speedSquared;
+
+            return MathHelper.Max(t, 0f);
+        }
     }
 }

@@ -1,6 +1,8 @@
 ﻿#region Using Statements
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System;
+using System.Collections.Generic;
 #endregion
 
 namespace Ark
@@ -10,8 +12,6 @@ namespace Ark
         #region Constants
 
         private const int m_MaxLasers = 6;
-
-        private const float m_FireInterval = 0.25f;
 
         #endregion
 
@@ -28,7 +28,11 @@ namespace Ark
         private float m_CurrentHealth;
         private float m_Radius;
         private float m_LaserTime;
+        private float m_NextFireInterval;
         private float m_Speed;
+
+        private float m_LateralVelocity;
+        private float m_WanderPhase;
 
         private Laser[] m_Lasers;
 
@@ -118,6 +122,13 @@ namespace Ark
 
             m_Radius = 1000;
 
+            // Randomized per-enemy so a wave doesn't fire/wander in
+            // lockstep -- rolled once here (not just after the first shot)
+            // so even the opening shot isn't synchronized across enemies.
+            m_NextFireInterval = GameVariables.EnemyLaserFireInterval
+                + Extensions.Random.NextFloat(-GameVariables.EnemyFireIntervalJitter, GameVariables.EnemyFireIntervalJitter);
+            m_WanderPhase = Extensions.Random.NextFloat(0f, MathHelper.TwoPi);
+
             m_Lasers = new Laser[m_MaxLasers];
 
             for (int i = 0; i < m_MaxLasers; i++)
@@ -146,24 +157,96 @@ namespace Ark
             m_BoundingRect.X = (int)Position.X - (int)Origin.X;
             m_BoundingRect.Y = (int)Position.Y - (int)Origin.Y;
 
-            UpdateMovement();
             UpdateLaser(gameTime);
         }
 
-        private void UpdateMovement()
+        // Separate from Update(GameTime) because Sprite's Update signature
+        // is fixed and has no way to carry the live player-projectile list
+        // this needs for evasion -- same reason Player.UpdateWeapons is
+        // separate from Player.Update. Called explicitly by Wave right
+        // after Update(gameTime).
+        public void UpdateMovement(GameTime gameTime, List<Projectile> threats)
         {
             if (IsBeingPulled)
             {
                 return;
             }
 
-            this.Position.Y += m_Speed;
+            float targetLateralVelocity = ComputeSteeringTarget(threats);
 
-            if(this.Position.Y > m_ViewportRect.Height)
+            m_LateralVelocity = MathHelper.Lerp(m_LateralVelocity, targetLateralVelocity, GameVariables.EnemySteeringBlendPerFrame);
+
+            Position.X += m_LateralVelocity;
+            Position.X = MathHelper.Clamp(Position.X, m_ViewportRect.Left + Width / 2, m_ViewportRect.Right - Width / 2);
+
+            Position.Y += m_Speed;
+
+            if (Position.Y > m_ViewportRect.Height)
             {
-                this.Position.X = Extensions.Random.Next(GameVariables.EnemySpawnMinX, GameVariables.EnemySpawnMaxX);
-                this.Position.Y = Extensions.Random.Next(GameVariables.EnemySpawnMinY, GameVariables.EnemySpawnMaxY);
+                Position.X = Extensions.Random.Next(GameVariables.EnemySpawnMinX, GameVariables.EnemySpawnMaxX);
+                Position.Y = Extensions.Random.Next(GameVariables.EnemySpawnMinY, GameVariables.EnemySpawnMaxY);
             }
+        }
+
+        // Reacts to the soonest-arriving Laser/Railgun shot whose predicted
+        // closest approach is both close enough and soon enough to count as
+        // a real threat; falls back to a gentle ambient wander otherwise.
+        private float ComputeSteeringTarget(List<Projectile> threats)
+        {
+            Projectile nearestThreat = null;
+            Vector2 nearestClosestPoint = Vector2.Zero;
+            float nearestTime = float.MaxValue;
+
+            foreach (Projectile projectile in threats)
+            {
+                float t = Physics.TimeToClosestApproach(projectile.Position, projectile.Velocity, Position);
+
+                if (t > GameVariables.EnemyEvasionLookaheadFrames)
+                {
+                    continue;
+                }
+
+                Vector2 closestPoint = projectile.Position + projectile.Velocity * t;
+
+                if (Vector2.Distance(closestPoint, Position) > GameVariables.EnemyEvasionRadius)
+                {
+                    continue;
+                }
+
+                if (t < nearestTime)
+                {
+                    nearestTime = t;
+                    nearestThreat = projectile;
+                    nearestClosestPoint = closestPoint;
+                }
+            }
+
+            if (nearestThreat != null)
+            {
+                return DodgeVelocity(nearestThreat.Velocity, nearestClosestPoint);
+            }
+
+            m_WanderPhase += GameVariables.EnemyWanderFrequency;
+
+            return (float)Math.Sin(m_WanderPhase) * GameVariables.EnemyWanderSpeed;
+        }
+
+        // Perpendicular to the shot's velocity, signed toward whichever
+        // side this enemy is already offset from its line -- continuing
+        // the lean it's already on rather than picking an arbitrary side.
+        private float DodgeVelocity(Vector2 threatVelocity, Vector2 closestPoint)
+        {
+            if (threatVelocity.LengthSquared() < 0.01f)
+            {
+                return 0f;
+            }
+
+            Vector2 perpendicular = new Vector2(-threatVelocity.Y, threatVelocity.X);
+            perpendicular.Normalize();
+
+            float side = Vector2.Dot(Position - closestPoint, perpendicular) >= 0 ? 1f : -1f;
+
+            return perpendicular.X * side * GameVariables.EnemyEvasionSpeed;
         }
 
         private void UpdateLaser(GameTime gameTime)
@@ -209,7 +292,7 @@ namespace Ark
 
         public void FireLaser()
         {
-            if (m_LaserTime >= m_FireInterval)
+            if (m_LaserTime >= m_NextFireInterval)
             {
                 for (int i = 0; i < m_MaxLasers; i++)
                 {
@@ -228,6 +311,8 @@ namespace Ark
                         }
 
                         m_LaserTime = 0;
+                        m_NextFireInterval = GameVariables.EnemyLaserFireInterval
+                            + Extensions.Random.NextFloat(-GameVariables.EnemyFireIntervalJitter, GameVariables.EnemyFireIntervalJitter);
 
                         return;
                     }

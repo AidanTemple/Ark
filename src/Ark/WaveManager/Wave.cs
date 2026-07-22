@@ -87,7 +87,7 @@ namespace Ark
 
         #region Update
 
-        public void Update(GameTime gameTime)
+        public void Update(GameTime gameTime, List<Projectile> threats)
         {
             if(m_SpawnCount == m_EnemyCount)
             {
@@ -98,7 +98,7 @@ namespace Ark
             if(m_IsSpawning)
             {
                 m_SpawnTimer += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                
+
                 if(m_SpawnTimer > 2)
                 {
                     // Add a new enemy.
@@ -110,6 +110,7 @@ namespace Ark
             {
                 Enemy enemy = m_Enemies[i];
                 enemy.Update(gameTime);
+                enemy.UpdateMovement(gameTime, threats);
 
                 if(enemy.IsDead)
                 {

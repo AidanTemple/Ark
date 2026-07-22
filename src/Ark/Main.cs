@@ -36,6 +36,11 @@ namespace Ark
 
             Window.AllowUserResizing = false;
 
+            // Player aims/sets a destination with the mouse now -- without
+            // this the OS cursor stays hidden (MonoGame's default) and
+            // there's no visual feedback at all for where a click will land.
+            IsMouseVisible = true;
+
             // Capped at 30fps; EnemySpeed, PlayerSpeed, wave timing, etc. were
             // tuned around this tick rate -- revisit together if raising it.
             TargetElapsedTime = TimeSpan.FromTicks(333333);

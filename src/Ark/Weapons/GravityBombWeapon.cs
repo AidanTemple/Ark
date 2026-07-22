@@ -42,6 +42,14 @@ namespace Ark
             get { return false; }
         }
 
+        // The pull-then-detonate mechanic is already this weapon's own
+        // distinct enemy interaction (being pulled), not a dodgeable moving
+        // bullet the way Laser/Railgun shots are -- excluded from evasion.
+        public override bool IsEvadable
+        {
+            get { return false; }
+        }
+
         #endregion
 
         #region Update

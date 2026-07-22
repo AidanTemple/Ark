@@ -141,7 +141,22 @@ namespace Ark
                     player.UpdateWeapons(gameTime, m_WaveManager.Enemies, m_AsteroidManager.Asteroids);
                 }
 
-                m_WaveManager.Update(gameTime);
+                // Built after the loop above (not inside it) so this reflects
+                // every player's just-updated projectile positions this frame.
+                // A gameplay interaction, not a HUD concern, so it aggregates
+                // across all players rather than using the m_Players[0]
+                // shorthand reserved for UI-only code elsewhere in this file.
+                List<Projectile> threats = new List<Projectile>();
+
+                foreach (Player player in m_Players)
+                {
+                    if (player.IsAlive)
+                    {
+                        threats.AddRange(player.GetEvadableProjectiles());
+                    }
+                }
+
+                m_WaveManager.Update(gameTime, threats);
                 m_AsteroidManager.Update(gameTime);
 
                 Particle.Update();
@@ -169,8 +184,8 @@ namespace Ark
                         {
                             if (player.IsAlive && enemy.IsOnScreen && enemy.IsInRange(player.Position))
                             {
-                                if (player.Position.X > enemy.Position.X - enemy.Origin.X
-                                    && player.Position.X < enemy.Position.X + enemy.Origin.X)
+                                if (player.Position.X > enemy.Position.X - GameVariables.EnemyFireColumnHalfWidth
+                                    && player.Position.X < enemy.Position.X + GameVariables.EnemyFireColumnHalfWidth)
                                 {
                                     enemy.FireLaser();
                                     break;
