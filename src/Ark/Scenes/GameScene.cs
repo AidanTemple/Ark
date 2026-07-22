@@ -293,10 +293,13 @@ namespace Ark
             m_HealthBar.Draw(SceneManager.SpriteBatch);
             m_ShieldBar.Draw(SceneManager.SpriteBatch);
 
-            Vector2 size = ContentManager.Game0Font.MeasureString(m_WaveManager.WaveNumber.ToString());
+            if (ContentManager.Game0Font != null)
+            {
+                Vector2 size = ContentManager.Game0Font.MeasureString(m_WaveManager.WaveNumber.ToString());
 
-            spriteBatch.DrawString(ContentManager.Game0Font, m_WaveManager.WaveNumber.ToString(), 
-                new Vector2(SceneManager.GraphicsDevice.Viewport.Width - size.X, 15), Color.White);
+                spriteBatch.DrawString(ContentManager.Game0Font, m_WaveManager.WaveNumber.ToString(),
+                    new Vector2(SceneManager.GraphicsDevice.Viewport.Width - size.X, 15), Color.White);
+            }
 
             m_Countdown.Draw(spriteBatch, SceneManager.GraphicsDevice.Viewport);
 
@@ -312,7 +315,10 @@ namespace Ark
 
         private void DrawGUI(SpriteBatch spriteBatch)
         {
-            spriteBatch.DrawString(ContentManager.Game0Font, GameVariables.Score.ToString(), new Vector2(15, 15), Color.White);
+            if (ContentManager.Game0Font != null)
+            {
+                spriteBatch.DrawString(ContentManager.Game0Font, GameVariables.Score.ToString(), new Vector2(15, 15), Color.White);
+            }
         }
 
         #endregion

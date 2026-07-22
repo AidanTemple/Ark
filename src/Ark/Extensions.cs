@@ -35,5 +35,31 @@ namespace Ark
 
             return position;
         }
+
+        // No-op instead of throwing when content failed to load (see
+        // ContentManager.TryLoad) -- every plain sprite Draw in the codebase
+        // funnels through one of these two overloads, so guarding here
+        // covers them all without repeating the null check at each call site.
+        public static void DrawSafe(this SpriteBatch spriteBatch, Texture2D texture, Vector2 position, Rectangle? sourceRectangle,
+            Color color, float rotation, Vector2 origin, float scale, SpriteEffects effects, float layerDepth)
+        {
+            if (texture == null)
+            {
+                return;
+            }
+
+            spriteBatch.Draw(texture, position, sourceRectangle, color, rotation, origin, scale, effects, layerDepth);
+        }
+
+        public static void DrawSafe(this SpriteBatch spriteBatch, Texture2D texture, Rectangle destinationRectangle,
+            Rectangle? sourceRectangle, Color color)
+        {
+            if (texture == null)
+            {
+                return;
+            }
+
+            spriteBatch.Draw(texture, destinationRectangle, sourceRectangle, color);
+        }
     }
 }

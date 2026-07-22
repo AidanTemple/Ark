@@ -173,6 +173,14 @@ namespace Ark
         public void CreateParticle(Texture2D texture, Vector2 position, Color tint,
             float duration, Vector2 scale, T state, float theta)
         {
+            // Draw() reads particle.Texture.Width/Height unguarded -- refuse
+            // to create a particle content failed to load a texture for,
+            // rather than let that surface as a crash later during Draw.
+            if (texture == null)
+            {
+                return;
+            }
+
             theta = 0;
 
             Particle particle;

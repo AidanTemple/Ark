@@ -356,7 +356,7 @@ namespace Ark
         {
             if (IsAlive)
             {
-                spriteBatch.Draw(Texture, Position, null, Color.White, Rotation,
+                spriteBatch.DrawSafe(Texture, Position, null, Color.White, Rotation,
                     Origin, Scale, SpriteEffects.None, Depth);
 
                 foreach (WeaponSlot slot in m_WeaponSlots)

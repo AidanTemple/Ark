@@ -1,5 +1,7 @@
 #region Using Statements
 using Microsoft.Xna.Framework.Graphics;
+using System;
+using System.Diagnostics;
 #endregion
 
 namespace Ark
@@ -10,6 +12,31 @@ namespace Ark
     // GameScene for the owning ContentManager instances.
     static class ContentManager
     {
+        #region Helper Methods
+
+        // Content is missing more often than this project would like (see
+        // the Asteroid_Large/Medium/Small comment below) -- a straight
+        // content.Load<T> throws and takes the whole scene load down with
+        // it. Swallow that here so one missing asset degrades to "doesn't
+        // draw" instead of a hard crash; callers just get null back, and
+        // every draw call site is expected to tolerate a null Texture/Font
+        // (see Extensions.DrawSafe and the null checks guarding DrawString
+        // call sites throughout).
+        public static T TryLoad<T>(Microsoft.Xna.Framework.Content.ContentManager content, string assetName) where T : class
+        {
+            try
+            {
+                return content.Load<T>(assetName);
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine($"Content load failed for '{assetName}': {e.Message}");
+                return null;
+            }
+        }
+
+        #endregion
+
         #region Menu
 
         // Menu no longer loads/draws a background texture -- see Menu.cs.
@@ -51,18 +78,18 @@ namespace Ark
 
         public static void LoadGame(Microsoft.Xna.Framework.Content.ContentManager content)
         {
-            Player          = content.Load<Texture2D>("Textures/Player");
-            Missile         = content.Load<Texture2D>("Textures/Missile");
-            Torpedo         = content.Load<Texture2D>("Textures/Torpedo");
-            Pulse           = content.Load<Texture2D>("Textures/Pulse");
-            Enemy           = content.Load<Texture2D>("Textures/Enemy_Normal");
-            EnemyLaser      = content.Load<Texture2D>("Textures/Enemy_Laser");
-            LineParticle    = content.Load<Texture2D>("Textures/LineParticle");
-            StatusBar       = content.Load<Texture2D>("Textures/StatusBar");
+            Player          = TryLoad<Texture2D>(content, "Textures/Player");
+            Missile         = TryLoad<Texture2D>(content, "Textures/Missile");
+            Torpedo         = TryLoad<Texture2D>(content, "Textures/Torpedo");
+            Pulse           = TryLoad<Texture2D>(content, "Textures/Pulse");
+            Enemy           = TryLoad<Texture2D>(content, "Textures/Enemy_Normal");
+            EnemyLaser      = TryLoad<Texture2D>(content, "Textures/Enemy_Laser");
+            LineParticle    = TryLoad<Texture2D>(content, "Textures/LineParticle");
+            StatusBar       = TryLoad<Texture2D>(content, "Textures/StatusBar");
 
-            Game0Font       = content.Load<SpriteFont>("Fonts/game0");
-            LargeFont       = content.Load<SpriteFont>("Fonts/LargeFont");
-            MediumFont      = content.Load<SpriteFont>("Fonts/mediumFont");
+            Game0Font       = TryLoad<SpriteFont>(content, "Fonts/game0");
+            LargeFont       = TryLoad<SpriteFont>(content, "Fonts/LargeFont");
+            MediumFont      = TryLoad<SpriteFont>(content, "Fonts/mediumFont");
         }
 
         public static void UnloadGame()

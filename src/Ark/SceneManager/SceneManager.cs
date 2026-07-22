@@ -78,8 +78,8 @@ namespace Ark
 
             m_SpriteBatch = new SpriteBatch(GraphicsDevice);
 
-            m_Font = content.Load<SpriteFont>("Fonts/menu");
-            m_BlankTexture = content.Load<Texture2D>("Textures/blank");
+            m_Font = ContentManager.TryLoad<SpriteFont>(content, "Fonts/menu");
+            m_BlankTexture = ContentManager.TryLoad<Texture2D>(content, "Textures/blank");
 
             // Tell each of the Scenes to load their content.
             foreach (Scene scene in m_Scenes)
@@ -234,6 +234,11 @@ namespace Ark
         /// </summary>
         public void FadeBackBufferToBlack(float alpha)
         {
+            if (m_BlankTexture == null)
+            {
+                return;
+            }
+
             Viewport viewport = GraphicsDevice.Viewport;
 
             m_SpriteBatch.Begin();

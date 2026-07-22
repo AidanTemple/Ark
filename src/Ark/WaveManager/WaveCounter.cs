@@ -67,7 +67,7 @@ namespace Ark
 
         public void Draw(SpriteBatch spriteBatch, Viewport viewport, int waveNumber)
         {
-            if (m_Blink)
+            if (m_Blink && ContentManager.LargeFont != null && ContentManager.MediumFont != null)
             {
                 string count = waveNumber.ToString("00");
 

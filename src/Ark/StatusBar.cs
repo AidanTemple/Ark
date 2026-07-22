@@ -71,10 +71,10 @@ namespace Ark
 
         public void Draw(SpriteBatch spriteBatch)
         {
-            spriteBatch.Draw(m_Texture, new Rectangle(X, Y, Width, Height),
+            spriteBatch.DrawSafe(m_Texture, new Rectangle(X, Y, Width, Height),
                 new Rectangle(0, 5, Width, Height), Color.Red);
 
-            spriteBatch.Draw(m_Texture, new Rectangle(X, Y, (int)(Width * ((double)m_Percent / 100)),
+            spriteBatch.DrawSafe(m_Texture, new Rectangle(X, Y, (int)(Width * ((double)m_Percent / 100)),
                 Height), new Rectangle(0, 5, Width, 5), m_Color);
         }
 

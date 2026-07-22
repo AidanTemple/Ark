@@ -82,7 +82,7 @@ namespace Ark
 
         public void Draw(SpriteBatch spriteBatch, Viewport viewport)
         {
-            if (IsCountingDown)
+            if (IsCountingDown && ContentManager.LargeFont != null)
             {
                 Vector2 position = Extensions.CenterString(ContentManager.LargeFont,
                     m_Text, viewport.Width, viewport.Height);

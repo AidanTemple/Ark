@@ -71,7 +71,7 @@ namespace Ark
 
         public virtual void Draw(SpriteBatch spriteBatch)
         {
-            spriteBatch.Draw(Texture, Position, Source, Color, Rotation, Origin, Scale, Effects, Depth);
+            spriteBatch.DrawSafe(Texture, Position, Source, Color, Rotation, Origin, Scale, Effects, Depth);
         }
 
         #endregion

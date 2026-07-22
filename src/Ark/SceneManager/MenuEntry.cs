@@ -102,6 +102,11 @@ namespace Ark
             SpriteBatch spriteBatch = manager.SpriteBatch;
             SpriteFont font = manager.MenuFont;
 
+            if (font == null)
+            {
+                return;
+            }
+
             Vector2 origin = new Vector2(0, font.LineSpacing / 2);
 
             spriteBatch.DrawString(font, m_Text, m_Position, color, 0, origin, scale, SpriteEffects.None, 0);
