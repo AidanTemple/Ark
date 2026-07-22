@@ -20,10 +20,6 @@ namespace Ark
         private StatusBar m_HealthBar;
         private StatusBar m_ShieldBar;
 
-        private Countdown m_Countdown;
-
-        private bool m_ReturnToMenu;
-
         private Microsoft.Xna.Framework.Content.ContentManager m_Content;
 
         #endregion
@@ -56,8 +52,6 @@ namespace Ark
         private void Reset()
         {
             GameVariables.Score = 0;
-
-            m_Countdown = new Countdown();
 
             // A single-element list for now -- Player itself no longer hardcodes
             // PlayerIndex.One (it listens to whichever controller is passed in),
@@ -113,85 +107,74 @@ namespace Ark
         {
             base.Update(gameTime, hasFocus, coveredByOtherScreen);
 
-            if (m_ReturnToMenu && IsExiting && TransitionPosition >= 1f)
+            HandleCollisions();
+
+            foreach (Player player in m_Players)
             {
-                SceneManager.AddScene(new MenuScene(), ControllingPlayer);
-                m_ReturnToMenu = false;
+                player.Update(gameTime);
+
+                // Separate call because weapons need the current enemy/asteroid
+                // lists to resolve hits/effects, and Sprite.Update's signature
+                // can't carry them -- keep this before WaveManager/AsteroidManager
+                // Update so damage resolves against pre-movement positions
+                // this frame.
+                player.UpdateWeapons(gameTime, m_WaveManager.Enemies, m_AsteroidManager.Asteroids);
             }
 
-            m_Countdown.Update(gameTime);
+            // Built after the loop above (not inside it) so this reflects
+            // every player's just-updated projectile positions this frame.
+            // A gameplay interaction, not a HUD concern, so it aggregates
+            // across all players rather than using the m_Players[0]
+            // shorthand reserved for UI-only code elsewhere in this file.
+            List<Projectile> threats = new List<Projectile>();
 
-            if (!m_Countdown.IsCountingDown)
+            foreach (Player player in m_Players)
             {
-                HandleCollisions();
-
-                foreach (Player player in m_Players)
+                if (player.IsAlive)
                 {
-                    player.Update(gameTime);
-
-                    // Separate call because weapons need the current enemy/asteroid
-                    // lists to resolve hits/effects, and Sprite.Update's signature
-                    // can't carry them -- keep this before WaveManager/AsteroidManager
-                    // Update so damage resolves against pre-movement positions
-                    // this frame.
-                    player.UpdateWeapons(gameTime, m_WaveManager.Enemies, m_AsteroidManager.Asteroids);
+                    threats.AddRange(player.GetEvadableProjectiles());
                 }
+            }
 
-                // Built after the loop above (not inside it) so this reflects
-                // every player's just-updated projectile positions this frame.
-                // A gameplay interaction, not a HUD concern, so it aggregates
-                // across all players rather than using the m_Players[0]
-                // shorthand reserved for UI-only code elsewhere in this file.
-                List<Projectile> threats = new List<Projectile>();
+            m_WaveManager.Update(gameTime, threats);
 
-                foreach (Player player in m_Players)
+            // AsteroidManager.Update() is what rolls its spawn timer and
+            // calls Spawn() -- skipping it disables asteroid spawning
+            // entirely for now (no Asteroid_Large/Medium/Small art exists
+            // yet, see ContentManager.cs). m_AsteroidManager stays alive
+            // and permanently empty so the Draw/collision/weapon call
+            // sites below don't need touching.
+
+            Particle.Update();
+
+            // Health bar and the death check below are still tied to a single
+            // player (m_Players[0]) -- a multi-player HUD and whether one co-op
+            // player dying should end the round for everyone are game-design
+            // decisions this pass doesn't answer, not architecture ones.
+            m_HealthBar.Percent = m_Players[0].Health;
+            m_HealthBar.Update();
+
+            m_ShieldBar.Percent = m_Players[0].ShieldPercent;
+            m_ShieldBar.Update();
+
+            if (m_Players[0].Health <= 0 && m_Players[0].IsAlive)
+            {
+                Reset();
+            }
+
+            foreach (Enemy enemy in m_WaveManager.Enemies)
+            {
+                if (enemy.IsAlive)
                 {
-                    if (player.IsAlive)
+                    foreach (Player player in m_Players)
                     {
-                        threats.AddRange(player.GetEvadableProjectiles());
-                    }
-                }
-
-                m_WaveManager.Update(gameTime, threats);
-
-                // AsteroidManager.Update() is what rolls its spawn timer and
-                // calls Spawn() -- skipping it disables asteroid spawning
-                // entirely for now (no Asteroid_Large/Medium/Small art exists
-                // yet, see ContentManager.cs). m_AsteroidManager stays alive
-                // and permanently empty so the Draw/collision/weapon call
-                // sites below don't need touching.
-
-                Particle.Update();
-
-                // Health bar and the death check below are still tied to a single
-                // player (m_Players[0]) -- a multi-player HUD and whether one co-op
-                // player dying should end the round for everyone are game-design
-                // decisions this pass doesn't answer, not architecture ones.
-                m_HealthBar.Percent = m_Players[0].Health;
-                m_HealthBar.Update();
-
-                m_ShieldBar.Percent = m_Players[0].ShieldPercent;
-                m_ShieldBar.Update();
-
-                if (m_Players[0].Health <= 0 && m_Players[0].IsAlive)
-                {
-                    Reset();
-                }
-
-                foreach (Enemy enemy in m_WaveManager.Enemies)
-                {
-                    if (enemy.IsAlive)
-                    {
-                        foreach (Player player in m_Players)
+                        if (player.IsAlive && enemy.IsOnScreen && enemy.IsInRange(player.Position))
                         {
-                            if (player.IsAlive && enemy.IsOnScreen && enemy.IsInRange(player.Position))
+                            if (player.Position.X > enemy.Position.X - GameVariables.EnemyFireColumnHalfWidth
+                                && player.Position.X < enemy.Position.X + GameVariables.EnemyFireColumnHalfWidth)
                             {
-                                if (player.Position.X > enemy.Position.X - GameVariables.EnemyFireColumnHalfWidth
-                                    && player.Position.X < enemy.Position.X + GameVariables.EnemyFireColumnHalfWidth)
-                                {
-                                    enemy.FireLaser();
-                                    break;
-                                }
+                                enemy.FireLaser();
+                                break;
                             }
                         }
                     }
@@ -205,10 +188,12 @@ namespace Ark
             {
                 PlayerIndex player;
 
+                // No menu to return to anymore (see MenuScene removal) --
+                // Back now exits the game outright, same as MenuScene's own
+                // former Cancel/Exit handling.
                 if (input.IsNewButtonPress(Buttons.Back, ControllingPlayer, out player))
                 {
-                    m_ReturnToMenu = true;
-                    ExitScene();
+                    SceneManager.Game.Exit();
                 }
             }
         }
@@ -300,8 +285,6 @@ namespace Ark
                 spriteBatch.DrawString(ContentManager.Game0Font, m_WaveManager.WaveNumber.ToString(),
                     new Vector2(SceneManager.GraphicsDevice.Viewport.Width - size.X, 15), Color.White);
             }
-
-            m_Countdown.Draw(spriteBatch, SceneManager.GraphicsDevice.Viewport);
 
             DrawGUI(spriteBatch);
 

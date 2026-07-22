@@ -8,8 +8,8 @@ namespace Ark
 {
     // Scene-scoped, not a global "load everything at boot" bag -- each region
     // is loaded by the scene that needs it (in that scene's own
-    // LoadContent()) and unloaded when that scene exits. See Menu and
-    // GameScene for the owning ContentManager instances.
+    // LoadContent()) and unloaded when that scene exits. See GameScene for
+    // the owning ContentManager instance.
     static class ContentManager
     {
         #region Helper Methods
@@ -33,22 +33,6 @@ namespace Ark
                 Debug.WriteLine($"Content load failed for '{assetName}': {e.Message}");
                 return null;
             }
-        }
-
-        #endregion
-
-        #region Menu
-
-        // Menu no longer loads/draws a background texture -- see Menu.cs.
-        // Kept as no-ops (rather than removing the calls at the Menu.cs call
-        // sites) so LoadContent()/UnloadContent() there don't need touching
-        // if menu content returns later.
-        public static void LoadMenu(Microsoft.Xna.Framework.Content.ContentManager content)
-        {
-        }
-
-        public static void UnloadMenu()
-        {
         }
 
         #endregion

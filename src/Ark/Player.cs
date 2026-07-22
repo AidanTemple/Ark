@@ -123,7 +123,7 @@ namespace Ark
             // Laser moved off A (its default elsewhere in this project's
             // history) so A is free to mean "confirm the cursor's position
             // as the ship's destination" -- B is otherwise unused during
-            // gameplay (only relevant to menu-cancel in Menu/MenuScene).
+            // gameplay.
             m_WeaponSlots = new List<WeaponSlot>
             {
                 new WeaponSlot(new LaserWeapon(), Buttons.B),
