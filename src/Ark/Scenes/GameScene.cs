@@ -153,7 +153,13 @@ namespace Ark
                 }
 
                 m_WaveManager.Update(gameTime, threats);
-                m_AsteroidManager.Update(gameTime);
+
+                // AsteroidManager.Update() is what rolls its spawn timer and
+                // calls Spawn() -- skipping it disables asteroid spawning
+                // entirely for now (no Asteroid_Large/Medium/Small art exists
+                // yet, see ContentManager.cs). m_AsteroidManager stays alive
+                // and permanently empty so the Draw/collision/weapon call
+                // sites below don't need touching.
 
                 Particle.Update();
 

@@ -53,7 +53,7 @@ namespace Ark
             m_SceneManager = new SceneManager(this);
             Components.Add(m_SceneManager);
 
-            m_SceneManager.AddScene(new HeaderScene(), null);
+            m_SceneManager.AddScene(new MenuScene(), null);
         }
 
         /// <summary>

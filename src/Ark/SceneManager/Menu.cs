@@ -16,8 +16,6 @@ namespace Ark
         private List<MenuEntry> m_Entries = new List<MenuEntry>();
         private int m_Index = 0;
 
-        private Texture2D m_MenuBackground;
-
         private Microsoft.Xna.Framework.Content.ContentManager m_Content;
 
         #endregion
@@ -44,8 +42,6 @@ namespace Ark
             m_Content = new Microsoft.Xna.Framework.Content.ContentManager(SceneManager.Game.Services, "Content");
 
             ContentManager.LoadMenu(m_Content);
-
-            m_MenuBackground = ContentManager.MenuBackground;
         }
 
         public override void UnloadContent()
@@ -97,8 +93,6 @@ namespace Ark
             SpriteFont font = SceneManager.MenuFont;
 
             spriteBatch.Begin();
-
-            spriteBatch.Draw(m_MenuBackground, Vector2.Zero, Color.White);
 
             for (int i = 0; i < m_Entries.Count; i++)
             {
