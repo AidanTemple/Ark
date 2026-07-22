@@ -121,22 +121,15 @@ namespace Ark
                 player.UpdateWeapons(gameTime, m_WaveManager.Enemies, m_AsteroidManager.Asteroids);
             }
 
-            // Built after the loop above (not inside it) so this reflects
-            // every player's just-updated projectile positions this frame.
-            // A gameplay interaction, not a HUD concern, so it aggregates
-            // across all players rather than using the m_Players[0]
-            // shorthand reserved for UI-only code elsewhere in this file.
-            List<Projectile> threats = new List<Projectile>();
-
-            foreach (Player player in m_Players)
-            {
-                if (player.IsAlive)
-                {
-                    threats.AddRange(player.GetEvadableProjectiles());
-                }
-            }
-
-            m_WaveManager.Update(gameTime, threats);
+            // WaveManager.Update() is what rolls the spawn timer and adds
+            // enemies to the current wave -- skipping it disables enemy
+            // spawning entirely for now, to focus dev-test on player
+            // movement/weapons fundamentals without enemy AI/fire in the
+            // way. m_WaveManager stays alive and permanently empty (0
+            // enemies spawned) so the Draw/collision/weapon call sites
+            // below don't need touching. The threats list below only
+            // matters for enemy evasion, so building it is skipped too
+            // while there's nothing to evade with it.
 
             // AsteroidManager.Update() is what rolls its spawn timer and
             // calls Spawn() -- skipping it disables asteroid spawning
