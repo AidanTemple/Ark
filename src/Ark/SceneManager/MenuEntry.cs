@@ -90,10 +90,11 @@ namespace Ark
                 color = Color.White;
             }
 
-            double time = gameTime.TotalGameTime.TotalSeconds;
-
-            float pulse = (float)Math.Sin(time * 6) + 1;
-            float scale = 1 + pulse * 0.05f * m_Fade;
+            // Scaled by m_Fade (not an instant jump) so growing into focus
+            // still transitions smoothly -- just without the old pulse's
+            // continuous sine-wave oscillation. 1.1 matches the previous
+            // pulse's peak size.
+            float scale = 1 + 0.1f * m_Fade;
 
             color *= scene.TransitionAlpha;
 
