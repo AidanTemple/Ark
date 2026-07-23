@@ -28,9 +28,10 @@ namespace Ark
             Content.RootDirectory = "Content";
 
             // Fixed-size windowed 1920x1200 canvas -- raised from the original
-            // 480x800 for now. Gameplay/UI coordinates elsewhere (enemy spawn
-            // bounds, menu/HUD positions, etc.) are still hardcoded around the
-            // old 480-wide canvas and have NOT been rescaled to match.
+            // 480x800 for now. A few absolute-pixel values are still tuned
+            // for the old canvas and haven't been rescaled to match (e.g.
+            // Player.PutInStartPosition, PlayerArrivalRadius/PlayerSlowRadius
+            // in GameVariables.cs).
             this.m_Graphics.PreferredBackBufferWidth = 1920;
             this.m_Graphics.PreferredBackBufferHeight = 1200;
             this.m_Graphics.IsFullScreen = false;

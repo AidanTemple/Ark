@@ -9,11 +9,6 @@ namespace Ark
     // bounding rect can use this without Physics needing to know it exists.
     public static class Physics
     {
-        public static bool Overlaps(Rectangle a, Rectangle b)
-        {
-            return a.Intersects(b);
-        }
-
         public static bool IsOutOfBounds(Vector2 position, Rectangle bounds)
         {
             return !bounds.Contains((int)position.X, (int)position.Y);

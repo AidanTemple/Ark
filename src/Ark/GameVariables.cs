@@ -21,8 +21,8 @@ namespace Ark
         public static float GravityBombPullDuration = 1.2f;
 
         // Player movement
-        // Gamepad-stick cursor-nudge speed (px/sec -- Player's movement
-        // code is already deltaTime-scaled, unlike most of the codebase).
+        // Gamepad-stick cursor-nudge speed (px/sec -- deltaTime-scaled,
+        // like the rest of Player's movement code).
         public static float CursorSpeed = 400f;
 
         // Arrive behavior: steering/turning stops inside PlayerArrivalRadius;

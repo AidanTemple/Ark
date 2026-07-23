@@ -1,4 +1,4 @@
-﻿#region Using Statements
+#region Using Statements
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
@@ -8,38 +8,15 @@ namespace Ark
 {
     static class Extensions
     {
-        public static Random Random = new Random();
-
         public static float ToAngle(this Vector2 vector)
         {
             return (float)Math.Atan2(vector.Y, vector.X);
         }
 
-        public static float NextFloat(this Random random, float minValue, float maxValue)
-        {
-            return (float)random.NextDouble() * (maxValue - minValue) + minValue;
-        }
-
-        public static Vector2 NextVector2(this Random random, float minLength, float maxLength)
-        {
-            double theta = random.NextDouble() * 2 * Math.PI;
-            float length = random.NextFloat(minLength, maxLength);
-
-            return new Vector2(length * (float)Math.Cos(theta), length * (float)Math.Sin(theta));
-        }
-
-        public static Vector2 CenterString(SpriteFont font, String text, int width, int height)
-        {
-            Vector2 length = font.MeasureString(text);
-            Vector2 position = new Vector2((width / 2) - (length.X / 2), (height / 2) - (length.Y / 2));
-
-            return position;
-        }
-
         // No-op instead of throwing when content failed to load (see
         // ContentManager.TryLoad) -- every plain sprite Draw in the codebase
-        // funnels through one of these two overloads, so guarding here
-        // covers them all without repeating the null check at each call site.
+        // funnels through this, so guarding here covers them all without
+        // repeating the null check at each call site.
         public static void DrawSafe(this SpriteBatch spriteBatch, Texture2D texture, Vector2 position, Rectangle? sourceRectangle,
             Color color, float rotation, Vector2 origin, float scale, SpriteEffects effects, float layerDepth)
         {
@@ -49,17 +26,6 @@ namespace Ark
             }
 
             spriteBatch.Draw(texture, position, sourceRectangle, color, rotation, origin, scale, effects, layerDepth);
-        }
-
-        public static void DrawSafe(this SpriteBatch spriteBatch, Texture2D texture, Rectangle destinationRectangle,
-            Rectangle? sourceRectangle, Color color)
-        {
-            if (texture == null)
-            {
-                return;
-            }
-
-            spriteBatch.Draw(texture, destinationRectangle, sourceRectangle, color);
         }
     }
 }

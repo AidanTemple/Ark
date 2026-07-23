@@ -133,9 +133,14 @@ namespace Ark
 
         public override void Update(GameTime gameTime)
         {
-            UpdateCursor(gameTime);
+            // Polled once and shared -- UpdateCursor and UpdateGamePad both
+            // need this frame's gamepad state, and re-polling per call is a
+            // redundant hardware read for the exact same instant.
+            GamePadState gamePadState = GamePad.GetState(Index);
+
+            UpdateCursor(gameTime, gamePadState);
             UpdateSteering(gameTime);
-            UpdateGamePad(gameTime);
+            UpdateGamePad(gamePadState);
             UpdateKeyboard(gameTime);
 
             Position = Physics.ClampToBounds(Position, m_ViewportRect, Width / 2, Height / 2);
@@ -154,16 +159,22 @@ namespace Ark
         // instant its OS position changes; otherwise the stick is free to
         // nudge the cursor -- so the two input methods don't fight over it
         // every frame.
-        private void UpdateCursor(GameTime gameTime)
+        private void UpdateCursor(GameTime gameTime, GamePadState gamePadState)
         {
             float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
             MouseState mouseState = Mouse.GetState();
-            GamePadState gamePadState = GamePad.GetState(Index);
 
             if (mouseState.Position != m_PreviousMouseState.Position)
             {
                 m_Cursor = new Vector2(mouseState.Position.X, mouseState.Position.Y);
+
+                // The OS cursor can sit outside the window's client area
+                // (e.g. near a window edge) -- clamp the same way the
+                // gamepad-stick path below already does, so a click at
+                // that instant can't set a destination outside the
+                // viewport (the ship would otherwise never arrive).
+                m_Cursor = Physics.ClampToBounds(m_Cursor, m_ViewportRect, 0, 0);
             }
             else
             {
@@ -209,21 +220,18 @@ namespace Ark
             Vector2 toDestination = m_Destination - Position;
             float distance = toDestination.Length();
 
-            float spoolStep = deltaTime / GameVariables.PlayerEngineSpoolUpTime;
-
             if (distance <= GameVariables.PlayerArrivalRadius)
             {
                 // Arrived -- nothing left to point at, just coast to a stop.
-                Brake(deltaTime);
-                m_EnginePower = MathHelper.Max(m_EnginePower - spoolStep, 0f);
+                SpoolDown(deltaTime);
             }
             else
             {
                 float desiredHeading = toDestination.ToAngle();
-                float angleDiff = Math.Abs(MathHelper.WrapAngle(desiredHeading - Rotation));
+                float wrappedDiff = MathHelper.WrapAngle(desiredHeading - Rotation);
                 float toleranceRadians = MathHelper.ToRadians(GameVariables.PlayerHeadingToleranceDegrees);
 
-                if (angleDiff > toleranceRadians)
+                if (Math.Abs(wrappedDiff) > toleranceRadians)
                 {
                     // Not pointed the right way. Only start turning once
                     // any existing velocity has bled off below the braking
@@ -234,13 +242,12 @@ namespace Ark
                     if (isStopped)
                     {
                         float maxTurn = MathHelper.ToRadians(GameVariables.PlayerTurnRateDegrees) * deltaTime;
-                        float turnDelta = MathHelper.Clamp(MathHelper.WrapAngle(desiredHeading - Rotation), -maxTurn, maxTurn);
+                        float turnDelta = MathHelper.Clamp(wrappedDiff, -maxTurn, maxTurn);
 
                         Rotation = MathHelper.WrapAngle(Rotation + turnDelta);
                     }
 
-                    Brake(deltaTime);
-                    m_EnginePower = MathHelper.Max(m_EnginePower - spoolStep, 0f);
+                    SpoolDown(deltaTime);
                 }
                 else
                 {
@@ -248,7 +255,7 @@ namespace Ark
                     // Arrive behavior (speedFactor) bleeds the speed target
                     // down near the destination so it settles in instead of
                     // overshooting.
-                    m_EnginePower = MathHelper.Min(m_EnginePower + spoolStep, 1f);
+                    m_EnginePower = MathHelper.Min(m_EnginePower + deltaTime / GameVariables.PlayerEngineSpoolUpTime, 1f);
 
                     float speedFactor = MathHelper.Clamp(distance / GameVariables.PlayerSlowRadius, 0f, 1f);
                     Vector2 forward = new Vector2((float)Math.Cos(Rotation), (float)Math.Sin(Rotation));
@@ -258,6 +265,15 @@ namespace Ark
             }
 
             Position += m_Velocity * deltaTime;
+        }
+
+        // Shared by both the "arrived" and "not pointed the right way"
+        // cases in UpdateSteering -- brakes toward a stop and lets the
+        // engine spool back down toward idle.
+        private void SpoolDown(float deltaTime)
+        {
+            Brake(deltaTime);
+            m_EnginePower = MathHelper.Max(m_EnginePower - deltaTime / GameVariables.PlayerEngineSpoolUpTime, 0f);
         }
 
         private void Brake(float deltaTime)
@@ -282,10 +298,8 @@ namespace Ark
             m_Velocity += steering;
         }
 
-        private void UpdateGamePad(GameTime gameTime)
+        private void UpdateGamePad(GamePadState gamePadState)
         {
-            GamePadState gamePadState = GamePad.GetState(Index);
-
             foreach (WeaponSlot slot in m_WeaponSlots)
             {
                 if (gamePadState.IsButtonDown(slot.TriggerButton) && m_PreviousGamePadState.IsButtonUp(slot.TriggerButton))
@@ -344,7 +358,14 @@ namespace Ark
         {
             if (IsAlive)
             {
-                spriteBatch.DrawSafe(Texture, Position, null, Color.White, Rotation,
+                // The ship's art is drawn nose-up (SpriteBatch's rotation=0
+                // faces north), but Rotation itself is computed via
+                // Vector2.ToAngle()/atan2 (0 = east) to stay consistent with
+                // the forward-vector math in UpdateSteering -- reconciled
+                // here, the one place both conventions meet, so the
+                // rendered heading matches the ship's actual direction of
+                // travel instead of sitting 90 degrees off from it.
+                spriteBatch.DrawSafe(Texture, Position, null, Color.White, Rotation + MathHelper.PiOver2,
                     Origin, Scale, SpriteEffects.None, Depth);
 
                 foreach (WeaponSlot slot in m_WeaponSlots)

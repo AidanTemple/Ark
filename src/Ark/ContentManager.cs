@@ -1,6 +1,5 @@
 #region Using Statements
 using Microsoft.Xna.Framework.Graphics;
-using System;
 using System.Diagnostics;
 #endregion
 
@@ -18,17 +17,25 @@ namespace Ark
         // takes the whole scene load down with it. Swallow that here so a
         // missing asset degrades to "doesn't draw" instead of a hard crash;
         // callers just get null back, and every draw call site is expected
-        // to tolerate a null Texture/Font (see Extensions.DrawSafe and the
-        // null checks guarding DrawString call sites throughout).
+        // to tolerate a null Texture/Font (see Extensions.DrawSafe).
+        //
+        // Catches ContentLoadException specifically -- not Exception -- so
+        // a genuine bug elsewhere (a bad content-type reader, a corrupt
+        // file throwing something else) still surfaces as a crash instead
+        // of silently masquerading as "missing content." Trace.WriteLine
+        // (not Debug.WriteLine) because TRACE, unlike DEBUG, is defined in
+        // Release builds too -- a Debug.WriteLine here would compile away
+        // to nothing and a load failure would leave zero diagnostic trail
+        // outside a DEBUG build.
         public static T TryLoad<T>(Microsoft.Xna.Framework.Content.ContentManager content, string assetName) where T : class
         {
             try
             {
                 return content.Load<T>(assetName);
             }
-            catch (Exception e)
+            catch (Microsoft.Xna.Framework.Content.ContentLoadException e)
             {
-                Debug.WriteLine($"Content load failed for '{assetName}': {e.Message}");
+                Trace.WriteLine($"Content load failed for '{assetName}': {e.Message}");
                 return null;
             }
         }
