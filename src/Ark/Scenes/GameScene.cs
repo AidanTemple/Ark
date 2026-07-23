@@ -73,8 +73,9 @@ namespace Ark
             {
                 PlayerIndex player;
 
-                // No menu to return to -- Back exits the game outright.
-                if (input.IsNewButtonPress(Buttons.Back, ControllingPlayer, out player))
+                // No menu to return to -- Back/Escape exit the game outright.
+                if (input.IsNewButtonPress(Buttons.Back, ControllingPlayer, out player) ||
+                    input.IsNewKeyPress(Keys.Escape))
                 {
                     SceneManager.Game.Exit();
                 }
