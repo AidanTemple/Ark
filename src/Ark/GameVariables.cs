@@ -47,6 +47,32 @@ namespace Ark
         // before a ship actually starts responding to a new destination.
         public static float ShipEngineSpoolUpTime = 0.8f;
 
+        // Ship modules -- one of each fitted per slot (see Ship.cs's
+        // Create*Module factory methods and GameVariables.ShipHealth
+        // below). Damage that reaches a ship goes through Armor (flat
+        // reduction) then Shield (absorption) before what's left comes off
+        // Health.
+        public static float ShipHealth = 100f;
+
+        public static float ShieldCapacity = 30f;
+        public static float ShieldReplenishRate = 6f;
+
+        // Seconds without taking ANY damage before the shield starts
+        // regenerating.
+        public static float ShieldRepairDelay = 3.0f;
+
+        // Flat amount subtracted from incoming damage, floored at 0 (armor
+        // can't turn damage into healing).
+        public static float ArmorDamageReduction = 2f;
+
+        public static float CapacitorCapacity = 50f;
+        public static float CapacitorRechargeRate = 5f;
+
+        // Multiplicative bonuses applied to Ship.Speed/TurnRateDegrees when
+        // a PropulsionModule is fitted.
+        public static float PropulsionSpeedMultiplier = 1.2f;
+        public static float PropulsionTurnRateMultiplier = 1.15f;
+
         // Player input
         // Gamepad-stick cursor-nudge speed (px/sec -- deltaTime-scaled,
         // like the rest of Player's movement code).

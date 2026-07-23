@@ -26,6 +26,13 @@ namespace Ark
 
         private Rectangle m_BoundingRect;
 
+        // One of each fitted per slot -- null means that slot is empty.
+        // See the Create*Module factory methods below.
+        private ShieldModule m_ShieldModule;
+        private ArmorModule m_ArmorModule;
+        private CapacitorModule m_CapacitorModule;
+        private PropulsionModule m_PropulsionModule;
+
         #endregion
 
         #region Protected Members
@@ -51,13 +58,30 @@ namespace Ark
             set { m_BoundingRect = value; }
         }
 
+        public float Health { get; protected set; }
+
+        public float ShieldPercent
+        {
+            get { return m_ShieldModule != null ? m_ShieldModule.Percent : 0f; }
+        }
+
+        public float CapacitorPercent
+        {
+            get { return m_CapacitorModule != null ? m_CapacitorModule.Percent : 0f; }
+        }
+
+        protected virtual float MaxHealth => GameVariables.ShipHealth;
+
         // Movement stats a subclass can override to make a distinct ship
         // type feel different (faster/slower, tighter/wider turns, etc.)
         // without touching UpdateSteering itself. Default to the shared
-        // GameVariables.Ship* tuning.
-        protected virtual float Speed => GameVariables.ShipSpeed;
+        // GameVariables.Ship* tuning, with Speed/TurnRateDegrees further
+        // boosted by a fitted PropulsionModule, if any.
+        protected virtual float Speed =>
+            GameVariables.ShipSpeed * (m_PropulsionModule != null ? m_PropulsionModule.SpeedMultiplier : 1f);
         protected virtual float Acceleration => GameVariables.ShipAcceleration;
-        protected virtual float TurnRateDegrees => GameVariables.ShipTurnRateDegrees;
+        protected virtual float TurnRateDegrees =>
+            GameVariables.ShipTurnRateDegrees * (m_PropulsionModule != null ? m_PropulsionModule.TurnRateMultiplier : 1f);
         protected virtual float ArrivalRadius => GameVariables.ShipArrivalRadius;
         protected virtual float SlowRadius => GameVariables.ShipSlowRadius;
         protected virtual float BrakingSpeedThreshold => GameVariables.ShipBrakingSpeedThreshold;
@@ -93,6 +117,16 @@ namespace Ark
                 // immediately steer toward Vector2.Zero (top-left).
                 m_Destination = Position;
 
+                Health = MaxHealth;
+
+                // One slot of each -- a subclass wanting a different
+                // loadout (or none at all) overrides the relevant factory
+                // below; returning null leaves that slot empty.
+                m_ShieldModule = CreateShieldModule();
+                m_ArmorModule = CreateArmorModule();
+                m_CapacitorModule = CreateCapacitorModule();
+                m_PropulsionModule = CreatePropulsionModule();
+
                 IsAlive = true;
             }
         }
@@ -105,6 +139,14 @@ namespace Ark
         {
             Position = new Vector2(m_ViewportRect.Width / 2, m_ViewportRect.Height - Height);
         }
+
+        // Empty (unfitted) by default -- override to fit a module of that
+        // category. A ship type with no shield slot at all, for example,
+        // simply doesn't override CreateShieldModule.
+        protected virtual ShieldModule CreateShieldModule() => null;
+        protected virtual ArmorModule CreateArmorModule() => null;
+        protected virtual CapacitorModule CreateCapacitorModule() => null;
+        protected virtual PropulsionModule CreatePropulsionModule() => null;
 
         #endregion
 
@@ -122,6 +164,36 @@ namespace Ark
             foreach (Weapon weapon in m_Weapons)
             {
                 weapon.Update(gameTime, m_ViewportRect);
+            }
+
+            m_ShieldModule?.Update(gameTime);
+            m_ArmorModule?.Update(gameTime);
+            m_CapacitorModule?.Update(gameTime);
+            m_PropulsionModule?.Update(gameTime);
+        }
+
+        // The single entry point for anything hurting this ship -- armor
+        // reduces first, then the shield soaks what's left, and only
+        // whatever gets past both comes off Health. Callers must not
+        // subtract Health directly, or armor/shield (and the shield's
+        // repair-delay timer) are silently bypassed. Nothing calls this
+        // yet (no source of incoming damage exists right now), but the
+        // pipeline is here and correct for when one does.
+        public void TakeDamage(float damage)
+        {
+            if (m_ArmorModule != null)
+            {
+                damage = m_ArmorModule.Reduce(damage);
+            }
+
+            if (m_ShieldModule != null)
+            {
+                damage = m_ShieldModule.Absorb(damage);
+            }
+
+            if (damage > 0)
+            {
+                Health -= damage;
             }
         }
 

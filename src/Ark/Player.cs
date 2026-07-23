@@ -85,6 +85,13 @@ namespace Ark
             }
         }
 
+        // One of each non-weapon slot fitted, for now -- see Ship's
+        // Create*Module factory methods.
+        protected override ShieldModule CreateShieldModule() => new ShieldModule();
+        protected override ArmorModule CreateArmorModule() => new ArmorModule();
+        protected override CapacitorModule CreateCapacitorModule() => new CapacitorModule();
+        protected override PropulsionModule CreatePropulsionModule() => new PropulsionModule();
+
         #endregion
 
         #region Update
