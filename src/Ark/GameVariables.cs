@@ -34,7 +34,10 @@ namespace Ark
         // Ship movement -- shared defaults every Ship subclass gets unless
         // it overrides the corresponding virtual property (see Ship.cs) to
         // make its own ship type feel different.
-        public static float ShipSpeed = 60.0f;
+        public static float ShipSpeed = 15.0f;
+
+        // Max stops in a single Ship route -- see Ship.AddWaypoint.
+        public static int ShipMaxWaypoints = 10;
 
         // Arrive behavior: steering/turning stops inside ShipArrivalRadius;
         // deceleration ramps in starting at ShipSlowRadius.

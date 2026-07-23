@@ -17,7 +17,13 @@ namespace Ark
     {
         #region Private Members
 
-        private Vector2 m_Destination;
+        // Route queue, max GameVariables.ShipMaxWaypoints long -- steering
+        // always targets m_Waypoints[0]; reaching it pops it off and moves
+        // on to the next, if any. Empty means nothing to steer toward (also
+        // the natural starting state -- no seeding needed to avoid steering
+        // toward Vector2.Zero the way a single-destination field would).
+        private readonly List<Vector2> m_Waypoints = new List<Vector2>();
+
         private Vector2 m_Velocity;
 
         // 0 (idle) to 1 (full thrust) -- ramps gradually rather than
@@ -89,6 +95,13 @@ namespace Ark
             get { return m_Weapons; }
         }
 
+        // How many waypoints are left in the current route, for HUD/UI
+        // purposes.
+        public int WaypointCount
+        {
+            get { return m_Waypoints.Count; }
+        }
+
         // Exposed so a subclass can pass its ship's capacitor into
         // Weapon.TryFire -- null if this ship has no capacitor fitted, in
         // which case capacitor-costed weapons simply can't fire (see
@@ -140,10 +153,6 @@ namespace Ark
 
                 BoundingRect = new Rectangle((int)Position.X - (int)Origin.X,
                     (int)Position.Y - (int)Origin.Y, Width, Height);
-
-                // Start already "arrived" -- otherwise the ship would
-                // immediately steer toward Vector2.Zero (top-left).
-                m_Destination = Position;
 
                 Health = MaxHealth;
 
@@ -225,19 +234,34 @@ namespace Ark
             }
         }
 
-        // Locks in a new point-to-move target -- called by whatever drives
-        // this ship (Player's mouse/gamepad input today, an AI controller
-        // for a future ship type).
+        // Replaces the current route with a single destination -- clears
+        // any queued waypoints. Called on a plain "go here now" command
+        // (Player's mouse-click/gamepad-A today).
         protected void SetDestination(Vector2 destination)
         {
-            m_Destination = destination;
+            m_Waypoints.Clear();
+            m_Waypoints.Add(destination);
         }
 
-        // Ship-like steering toward m_Destination, with rotation and thrust
-        // mutually exclusive -- the ship never turns while it still has
-        // meaningful velocity, and never thrusts until it's pointed the
-        // right way (within HeadingToleranceDegrees). Redirecting mid-flight
-        // to a new destination therefore plays out in three phases every
+        // Appends a stop to the current route instead of replacing it, up
+        // to GameVariables.ShipMaxWaypoints -- ignored once the route is
+        // already full. Called on a modified command (Player's Shift+click/
+        // gamepad-RightShoulder today) to build a multi-stop route.
+        protected void AddWaypoint(Vector2 waypoint)
+        {
+            if (m_Waypoints.Count >= GameVariables.ShipMaxWaypoints)
+            {
+                return;
+            }
+
+            m_Waypoints.Add(waypoint);
+        }
+
+        // Ship-like steering toward the current waypoint (m_Waypoints[0]),
+        // with rotation and thrust mutually exclusive -- the ship never
+        // turns while it still has meaningful velocity, and never thrusts
+        // until it's pointed the right way (within HeadingToleranceDegrees).
+        // Redirecting mid-flight therefore plays out in three phases every
         // real vessel goes through: brake off the old heading's velocity,
         // rotate in place once nearly stopped, then accelerate along the
         // new heading. This is a standard pattern for non-arcade ship
@@ -248,16 +272,25 @@ namespace Ark
         {
             float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-            Vector2 toDestination = m_Destination - Position;
-            float distance = toDestination.Length();
-
-            if (distance <= ArrivalRadius)
+            // Reached the current waypoint -- drop it and, in this same
+            // frame, start evaluating whatever's next in the route (if
+            // anything) instead of wasting a frame arrived with nothing
+            // to do.
+            if (m_Waypoints.Count > 0 && (m_Waypoints[0] - Position).Length() <= ArrivalRadius)
             {
-                // Arrived -- nothing left to point at, just coast to a stop.
+                m_Waypoints.RemoveAt(0);
+            }
+
+            if (m_Waypoints.Count == 0)
+            {
+                // No route left -- nothing to point at, just coast to a stop.
                 SpoolDown(deltaTime);
             }
             else
             {
+                Vector2 toDestination = m_Waypoints[0] - Position;
+                float distance = toDestination.Length();
+
                 float desiredHeading = toDestination.ToAngle();
                 float wrappedDiff = MathHelper.WrapAngle(desiredHeading - Rotation);
                 float toleranceRadians = MathHelper.ToRadians(HeadingToleranceDegrees);
@@ -284,8 +317,10 @@ namespace Ark
                 {
                     // Heading matches -- clear to thrust straight ahead.
                     // Arrive behavior (speedFactor) bleeds the speed target
-                    // down near the destination so it settles in instead of
-                    // overshooting.
+                    // down near the waypoint so it settles in instead of
+                    // overshooting -- this also means the ship slows for
+                    // every intermediate stop along a multi-waypoint route,
+                    // not just the final one.
                     m_EnginePower = MathHelper.Min(m_EnginePower + deltaTime / EngineSpoolUpTime, 1f);
 
                     float speedFactor = MathHelper.Clamp(distance / SlowRadius, 0f, 1f);

@@ -18,9 +18,11 @@ namespace Ark
         private MouseState m_PreviousMouseState;
 
         // Point-to-move helm control: a shared on-screen reticle steered by
-        // either the mouse or the gamepad's left stick; a click/A-press
-        // locks its current position in as the ship's destination (see
-        // Ship.SetDestination).
+        // either the mouse or the gamepad's left stick. A plain click/
+        // A-press locks its current position in as a new single
+        // destination (Ship.SetDestination, replacing any queued route);
+        // Shift+click/gamepad-RightShoulder instead appends it as the next
+        // stop on the current route (Ship.AddWaypoint).
         private Vector2 m_Cursor;
 
         #endregion
@@ -100,19 +102,21 @@ namespace Ark
 
         public override void Update(GameTime gameTime)
         {
-            // Polled once and shared -- UpdateCursor and UpdateGamePad both
-            // need this frame's gamepad state, and re-polling per call is a
-            // redundant hardware read for the exact same instant.
+            // Polled once each and shared -- UpdateCursor/UpdateGamePad/
+            // UpdateKeyboard all need this frame's device state, and
+            // re-polling per call is a redundant hardware read for the
+            // exact same instant.
             GamePadState gamePadState = GamePad.GetState(Index);
+            KeyboardState keyboardState = Keyboard.GetState();
 
             // Input handling (including firing) runs before base.Update --
             // base.Update() is what steers toward whatever destination
             // UpdateCursor just set, and updates every weapon's projectiles
             // by one frame, so a shot fired this frame should already be
             // queued up before that loop runs.
-            UpdateCursor(gameTime, gamePadState);
+            UpdateCursor(gameTime, gamePadState, keyboardState);
             UpdateGamePad(gamePadState);
-            UpdateKeyboard(gameTime);
+            UpdateKeyboard(keyboardState);
 
             base.Update(gameTime);
         }
@@ -122,7 +126,7 @@ namespace Ark
         // instant its OS position changes; otherwise the stick is free to
         // nudge the cursor -- so the two input methods don't fight over it
         // every frame.
-        private void UpdateCursor(GameTime gameTime, GamePadState gamePadState)
+        private void UpdateCursor(GameTime gameTime, GamePadState gamePadState, KeyboardState keyboardState)
         {
             float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
@@ -152,14 +156,28 @@ namespace Ark
                 }
             }
 
+            bool isShiftHeld = keyboardState.IsKeyDown(Keys.LeftShift) || keyboardState.IsKeyDown(Keys.RightShift);
+
             if (mouseState.LeftButton == ButtonState.Pressed && m_PreviousMouseState.LeftButton == ButtonState.Released)
             {
-                SetDestination(m_Cursor);
+                if (isShiftHeld)
+                {
+                    AddWaypoint(m_Cursor);
+                }
+                else
+                {
+                    SetDestination(m_Cursor);
+                }
             }
 
             if (gamePadState.IsButtonDown(Buttons.A) && m_PreviousGamePadState.IsButtonUp(Buttons.A))
             {
                 SetDestination(m_Cursor);
+            }
+
+            if (gamePadState.IsButtonDown(Buttons.RightShoulder) && m_PreviousGamePadState.IsButtonUp(Buttons.RightShoulder))
+            {
+                AddWaypoint(m_Cursor);
             }
 
             m_PreviousMouseState = mouseState;
@@ -178,10 +196,8 @@ namespace Ark
             m_PreviousGamePadState = gamePadState;
         }
 
-        private void UpdateKeyboard(GameTime gameTime)
+        private void UpdateKeyboard(KeyboardState keyboardState)
         {
-            KeyboardState keyboardState = Keyboard.GetState();
-
             if (IsNewKeyPress(keyboardState, Keys.D1))
             {
                 SelectedWeaponIndex = 0;

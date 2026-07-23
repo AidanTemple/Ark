@@ -126,6 +126,7 @@ namespace Ark
             DrawHudLine(spriteBatch, $"ARMOR: {player.ArmorDamageReduction:0}", ref position);
             DrawHudLine(spriteBatch, $"CAPACITOR: {player.CapacitorPercent:0}%", ref position);
             DrawHudLine(spriteBatch, $"PROPULSION: x{player.PropulsionSpeedMultiplier:0.00}", ref position);
+            DrawHudLine(spriteBatch, $"WAYPOINTS: {player.WaypointCount}/{GameVariables.ShipMaxWaypoints}", ref position);
 
             for (int i = 0; i < player.Weapons.Count; i++)
             {
