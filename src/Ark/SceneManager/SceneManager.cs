@@ -19,7 +19,6 @@ namespace Ark
         private InputState m_Input = new InputState();
 
         private SpriteBatch m_SpriteBatch;
-        private SpriteFont m_Font;
         private Texture2D m_BlankTexture;
 
         private bool m_IsInitialized;
@@ -35,15 +34,6 @@ namespace Ark
         public SpriteBatch SpriteBatch
         {
             get { return m_SpriteBatch; }
-        }
-
-        /// <summary>
-        /// A default font shared by all the Scenes. This saves
-        /// each Scene having to bother loading their own local copy.
-        /// </summary>
-        public SpriteFont MenuFont
-        {
-            get { return m_Font; }
         }
 
         #endregion
@@ -78,7 +68,6 @@ namespace Ark
 
             m_SpriteBatch = new SpriteBatch(GraphicsDevice);
 
-            m_Font = ContentManager.TryLoad<SpriteFont>(content, "Fonts/menu");
             m_BlankTexture = ContentManager.TryLoad<Texture2D>(content, "Textures/blank");
 
             // Tell each of the Scenes to load their content.

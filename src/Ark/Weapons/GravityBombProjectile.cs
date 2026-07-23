@@ -45,9 +45,8 @@ namespace Ark
 
         #region Update
 
-        // State *timing* only lives here -- Sprite.Update's fixed signature has
-        // no access to the enemy list, so the actual pull/detonate *effects* are
-        // applied by GravityBombWeapon.ResolveEffects, which reads State.
+        // State *timing* only lives here -- GravityBombWeapon.OnProjectileUpdated
+        // reads State to know when to kill this projectile once Detonating.
         public override void Update(GameTime gameTime)
         {
             base.Update(gameTime);
@@ -76,7 +75,7 @@ namespace Ark
                     break;
 
                 case GravityBombState.Detonating:
-                    // ResolveEffects applies the AoE damage and kills this
+                    // GravityBombWeapon.OnProjectileUpdated kills this
                     // projectile the first time it observes this state.
                     break;
             }
