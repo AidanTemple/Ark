@@ -70,6 +70,15 @@ namespace Ark
             get { return m_CapacitorModule != null ? m_CapacitorModule.Percent : 0f; }
         }
 
+        // Exposed so a subclass can pass its ship's capacitor into
+        // Weapon.TryFire -- null if this ship has no capacitor fitted, in
+        // which case capacitor-costed weapons simply can't fire (see
+        // Weapon.TryFire's null check).
+        protected CapacitorModule Capacitor
+        {
+            get { return m_CapacitorModule; }
+        }
+
         protected virtual float MaxHealth => GameVariables.ShipHealth;
 
         // Movement stats a subclass can override to make a distinct ship

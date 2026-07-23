@@ -15,7 +15,8 @@ namespace Ark
         #region Initialisation
 
         public GravityBombWeapon()
-            : base(m_PoolSize, GameVariables.GravityBombFireInterval)
+            : base(m_PoolSize, GameVariables.GravityBombFireInterval,
+                  GameVariables.GravityBombCapacitorCost, GameVariables.GravityBombChargeTime)
         {
         }
 

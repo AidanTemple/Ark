@@ -14,6 +14,12 @@ namespace Ark
         private readonly float m_FireInterval;
         private float m_FireTimer;
 
+        private readonly float m_CapacitorCost;
+        private readonly float m_ChargeTime;
+        private float m_ChargeTimer;
+        private bool m_IsCharging;
+        private Vector2 m_ChargePosition;
+
         #endregion
 
         #region Properties
@@ -35,11 +41,14 @@ namespace Ark
 
         #region Initialisation
 
-        protected Weapon(int poolSize, float fireInterval)
+        protected Weapon(int poolSize, float fireInterval, float capacitorCost, float chargeTime)
         {
             m_FireInterval = fireInterval;
 
             m_FireTimer = fireInterval;
+
+            m_CapacitorCost = capacitorCost;
+            m_ChargeTime = chargeTime;
 
             m_Projectiles = new Projectile[poolSize];
 
@@ -55,30 +64,47 @@ namespace Ark
 
         #region Update
 
-        public bool TryFire(Vector2 position)
+        // Starts a charge if the weapon is off cooldown, not already
+        // charging, a pool slot is free, and the capacitor can pay this
+        // weapon's cost -- capacitor is drawn immediately (committing the
+        // power up front, not on completion), so a shot that's already
+        // charging can't be starved by a later shot draining the capacitor
+        // out from under it. The projectile actually launches once
+        // ChargeTime elapses (see Update).
+        public bool TryFire(Vector2 position, CapacitorModule capacitor)
         {
-            if (m_FireTimer < m_FireInterval)
+            if (m_IsCharging || m_FireTimer < m_FireInterval || !HasFreeProjectile())
             {
                 return false;
             }
 
-            foreach (Projectile projectile in m_Projectiles)
+            if (capacitor == null || !capacitor.TryConsume(m_CapacitorCost))
             {
-                if (!projectile.IsAlive)
-                {
-                    projectile.Activate(position, LaunchVelocity);
-                    m_FireTimer = 0;
-
-                    return true;
-                }
+                return false;
             }
 
-            return false;
+            m_IsCharging = true;
+            m_ChargeTimer = 0f;
+            m_ChargePosition = position;
+
+            return true;
         }
 
         public void Update(GameTime gameTime, Rectangle viewportBounds)
         {
-            m_FireTimer += (float)gameTime.ElapsedGameTime.TotalSeconds;
+            float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+            m_FireTimer += deltaTime;
+
+            if (m_IsCharging)
+            {
+                m_ChargeTimer += deltaTime;
+
+                if (m_ChargeTimer >= m_ChargeTime)
+                {
+                    Launch();
+                }
+            }
 
             foreach (Projectile projectile in m_Projectiles)
             {
@@ -97,6 +123,38 @@ namespace Ark
 
                 OnProjectileUpdated(projectile);
             }
+        }
+
+        private bool HasFreeProjectile()
+        {
+            foreach (Projectile projectile in m_Projectiles)
+            {
+                if (!projectile.IsAlive)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // Actually fires the shot charged up by TryFire -- a free slot is
+        // still guaranteed here, since nothing else can draw from this
+        // weapon's own pool while it's charging (TryFire refuses re-entry
+        // via m_IsCharging).
+        private void Launch()
+        {
+            foreach (Projectile projectile in m_Projectiles)
+            {
+                if (!projectile.IsAlive)
+                {
+                    projectile.Activate(m_ChargePosition, LaunchVelocity);
+                    break;
+                }
+            }
+
+            m_IsCharging = false;
+            m_FireTimer = 0f;
         }
 
         // Hook for weapons whose projectiles need extra per-frame handling

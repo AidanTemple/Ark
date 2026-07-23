@@ -15,7 +15,8 @@ namespace Ark
         #region Initialisation
 
         public LaserWeapon()
-            : base(m_PoolSize, GameVariables.LaserWeaponFireInterval)
+            : base(m_PoolSize, GameVariables.LaserWeaponFireInterval,
+                  GameVariables.LaserWeaponCapacitorCost, GameVariables.LaserWeaponChargeTime)
         {
         }
 

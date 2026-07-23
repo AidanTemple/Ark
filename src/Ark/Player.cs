@@ -169,7 +169,7 @@ namespace Ark
             {
                 if (gamePadState.IsButtonDown(slot.TriggerButton) && m_PreviousGamePadState.IsButtonUp(slot.TriggerButton))
                 {
-                    slot.Weapon.TryFire(Position);
+                    slot.Weapon.TryFire(Position, Capacitor);
                 }
             }
 
@@ -195,7 +195,7 @@ namespace Ark
 
             if (IsNewKeyPress(keyboardState, Keys.Space))
             {
-                m_WeaponSlots[m_SelectedWeaponIndex].Weapon.TryFire(Position);
+                m_WeaponSlots[m_SelectedWeaponIndex].Weapon.TryFire(Position, Capacitor);
             }
 
             m_PreviousKeyboardState = keyboardState;

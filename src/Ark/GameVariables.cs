@@ -7,16 +7,29 @@ namespace Ark
         // -- kept at their original on-screen speed, just converted from the
         // old implicit px/frame-at-30fps units (multiplied by 30) now that
         // the game runs at a locked 60fps. See Main.cs.
+        //
+        // FireInterval is the cooldown after a shot before the weapon is
+        // ready to charge again; CapacitorCost is drawn from the ship's
+        // CapacitorModule (see Weapon.TryFire) the moment a charge starts,
+        // and ChargeTime is how long that charge takes before the shot
+        // actually launches. A weapon that's off cooldown still can't fire
+        // without enough capacitor charge to pay its cost.
         public static float LaserWeaponFireInterval = 0.15f;
         public static float LaserWeaponVelocityY = -300f;
+        public static float LaserWeaponCapacitorCost = 2f;
+        public static float LaserWeaponChargeTime = 0.05f;
 
         public static float RailgunFireInterval = 0.6f;
         public static float RailgunVelocityY = -480f;
+        public static float RailgunCapacitorCost = 8f;
+        public static float RailgunChargeTime = 0.3f;
 
         public static float GravityBombFireInterval = 2.0f;
         public static float GravityBombVelocityY = -180f;
         public static float GravityBombFlightDuration = 0.6f;
         public static float GravityBombPullDuration = 1.2f;
+        public static float GravityBombCapacitorCost = 20f;
+        public static float GravityBombChargeTime = 0.8f;
 
         // Ship movement -- shared defaults every Ship subclass gets unless
         // it overrides the corresponding virtual property (see Ship.cs) to

@@ -15,7 +15,8 @@ namespace Ark
         #region Initialisation
 
         public RailgunWeapon()
-            : base(m_PoolSize, GameVariables.RailgunFireInterval)
+            : base(m_PoolSize, GameVariables.RailgunFireInterval,
+                  GameVariables.RailgunCapacitorCost, GameVariables.RailgunChargeTime)
         {
         }
 
