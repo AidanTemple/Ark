@@ -15,6 +15,14 @@ namespace Ark
     // (deleted) Enemy class used to.
     public abstract class Ship : Sprite
     {
+        // Shared 1x1 white pixel for route-line/waypoint-marker drawing --
+        // created procedurally (not loaded from Content) so it can never be
+        // affected by missing/failed content, and shared across every Ship
+        // instance/subclass rather than one per ship. Lazily created by the
+        // first Ship constructed; never disposed, same as any other
+        // process-lifetime utility texture.
+        private static Texture2D s_PixelTexture;
+
         #region Private Members
 
         // Route queue, max GameVariables.ShipMaxWaypoints long -- steering
@@ -135,6 +143,12 @@ namespace Ark
 
         protected Ship(GraphicsDevice graphicsDevice, Texture2D texture)
         {
+            if (s_PixelTexture == null)
+            {
+                s_PixelTexture = new Texture2D(graphicsDevice, 1, 1);
+                s_PixelTexture.SetData(new[] { Color.White });
+            }
+
             Viewport viewport = graphicsDevice.Viewport;
 
             m_ViewportRect = new Rectangle(viewport.X, viewport.Y,
@@ -372,6 +386,10 @@ namespace Ark
         {
             if (IsAlive)
             {
+                // Drawn first so the ship sprite and its weapons render on
+                // top of the route rather than under it.
+                DrawRoute(spriteBatch);
+
                 // Ship art is drawn nose-up (SpriteBatch's rotation=0 faces
                 // north), but Rotation itself is computed via
                 // Vector2.ToAngle()/atan2 (0 = east) to stay consistent with
@@ -387,6 +405,51 @@ namespace Ark
                     weapon.Draw(spriteBatch);
                 }
             }
+        }
+
+        // A straight line from the ship through each queued waypoint in
+        // order, each marked with a small square -- one continuous line
+        // that bends at every stop, not separate ship-to-each-waypoint
+        // segments.
+        private void DrawRoute(SpriteBatch spriteBatch)
+        {
+            Vector2 from = Position;
+
+            foreach (Vector2 waypoint in m_Waypoints)
+            {
+                DrawLine(spriteBatch, from, waypoint, Color.White, GameVariables.WaypointLineThickness);
+                DrawWaypointMarker(spriteBatch, waypoint, GameVariables.WaypointMarkerSize, Color.White);
+
+                from = waypoint;
+            }
+        }
+
+        private void DrawLine(SpriteBatch spriteBatch, Vector2 start, Vector2 end, Color color, float thickness)
+        {
+            Vector2 delta = end - start;
+            float length = delta.Length();
+
+            if (length < 0.01f)
+            {
+                return;
+            }
+
+            float angle = (float)Math.Atan2(delta.Y, delta.X);
+
+            // Stretches the 1x1 pixel into a length x thickness bar running
+            // from start to end -- the standard MonoGame line-drawing
+            // technique (SpriteBatch has no line primitive of its own).
+            spriteBatch.Draw(s_PixelTexture, start, null, color, angle, Vector2.Zero,
+                new Vector2(length, thickness), SpriteEffects.None, 0f);
+        }
+
+        private void DrawWaypointMarker(SpriteBatch spriteBatch, Vector2 position, float size, Color color)
+        {
+            // Origin (0.5, 0.5) is the pixel's own center, so scaling it up
+            // to `size` keeps the square centered on position instead of
+            // growing down-right from it.
+            spriteBatch.Draw(s_PixelTexture, position, null, color, 0f, new Vector2(0.5f, 0.5f),
+                size, SpriteEffects.None, 0f);
         }
 
         #endregion

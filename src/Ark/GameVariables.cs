@@ -39,6 +39,12 @@ namespace Ark
         // Max stops in a single Ship route -- see Ship.AddWaypoint.
         public static int ShipMaxWaypoints = 10;
 
+        // Route visualization: line from the ship through each queued
+        // waypoint in order, each marked with a small square (see
+        // Ship.DrawRoute).
+        public static float WaypointLineThickness = 2f;
+        public static float WaypointMarkerSize = 6f;
+
         // Arrive behavior: steering/turning stops inside ShipArrivalRadius;
         // deceleration ramps in starting at ShipSlowRadius.
         public static float ShipArrivalRadius = 6f;
