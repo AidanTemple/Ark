@@ -30,8 +30,8 @@ namespace Ark
             // Fixed-size windowed 1920x1200 canvas -- raised from the original
             // 480x800 for now. A few absolute-pixel values are still tuned
             // for the old canvas and haven't been rescaled to match (e.g.
-            // Player.PutInStartPosition, PlayerArrivalRadius/PlayerSlowRadius
-            // in GameVariables.cs).
+            // Ship.PutInStartPosition's default, ShipArrivalRadius/
+            // ShipSlowRadius in GameVariables.cs).
             this.m_Graphics.PreferredBackBufferWidth = 1920;
             this.m_Graphics.PreferredBackBufferHeight = 1200;
             this.m_Graphics.IsFullScreen = false;

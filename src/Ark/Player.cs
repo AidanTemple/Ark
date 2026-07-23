@@ -2,20 +2,14 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System;
 using System.Collections.Generic;
 #endregion
 
 namespace Ark
 {
-    public class Player : Sprite
+    public class Player : Ship
     {
         #region Private Members
-
-        private Viewport m_Viewport;
-
-        private Rectangle m_ViewportRect;
-        private Rectangle m_BoundingRect;
 
         private List<WeaponSlot> m_WeaponSlots;
 
@@ -29,17 +23,11 @@ namespace Ark
         // below (Laser/Railgun/GravityBomb).
         private int m_SelectedWeaponIndex;
 
-        // Point-to-move helm control: m_Cursor is a shared on-screen
-        // reticle steered by either the mouse or the gamepad's left stick;
-        // a click/A-press locks its current position in as m_Destination,
-        // which the ship then turns to face and accelerates toward.
+        // Point-to-move helm control: a shared on-screen reticle steered by
+        // either the mouse or the gamepad's left stick; a click/A-press
+        // locks its current position in as the ship's destination (see
+        // Ship.SetDestination).
         private Vector2 m_Cursor;
-        private Vector2 m_Destination;
-        private Vector2 m_Velocity;
-
-        // 0 (idle) to 1 (full thrust) -- ramps gradually rather than
-        // snapping, see UpdateSteering.
-        private float m_EnginePower;
 
         #endregion
 
@@ -49,22 +37,12 @@ namespace Ark
         // PlayerIndex enum type within this class.
         public PlayerIndex Index { get; private set; }
 
-        public int Width { get; set; }
-        public int Height { get; set; }
-
-        private Vector2 Center { get; set; }
-
-        public Rectangle BoundingRect
-        {
-            get { return m_BoundingRect; }
-            set { m_BoundingRect = value; }
-        }
-
         #endregion
 
         #region Initialisation
 
         public Player(GraphicsDevice graphicsDevice, PlayerIndex index)
+            : base(graphicsDevice, ContentManager.Player)
         {
             Index = index;
 
@@ -85,34 +63,9 @@ namespace Ark
             // from the ship before the player has done anything.
             m_PreviousMouseState = Mouse.GetState();
 
-            m_Viewport = graphicsDevice.Viewport;
-
-            m_ViewportRect = new Rectangle(m_Viewport.X, m_Viewport.Y,
-                m_Viewport.Width, m_Viewport.Height);
-
-            Texture = ContentManager.Player;
-
             if (Texture != null)
             {
-                Width = Texture.Width;
-                Height = Texture.Height;
-
-                Origin = new Vector2(Width / 2, Height / 2);
-
-                Center = new Vector2(Position.X + Width / 2,
-                    Position.Y - Height / 2);
-
-                BoundingRect = new Rectangle((int)Position.X - (int)Origin.X,
-                    (int)Position.Y - (int)Origin.Y, Width, Height);
-
-                PutInStartPosition();
-
-                // Start already "arrived" at spawn -- otherwise the ship
-                // would immediately steer toward Vector2.Zero (top-left).
-                m_Destination = Position;
                 m_Cursor = Position;
-
-                IsAlive = true;
             }
 
             // Laser moved off A (its default elsewhere in this project's
@@ -125,6 +78,11 @@ namespace Ark
                 new WeaponSlot(new RailgunWeapon(), Buttons.X),
                 new WeaponSlot(new GravityBombWeapon(), Buttons.Y),
             };
+
+            foreach (WeaponSlot slot in m_WeaponSlots)
+            {
+                m_Weapons.Add(slot.Weapon);
+            }
         }
 
         #endregion
@@ -138,20 +96,16 @@ namespace Ark
             // redundant hardware read for the exact same instant.
             GamePadState gamePadState = GamePad.GetState(Index);
 
+            // Input handling (including firing) runs before base.Update --
+            // base.Update() is what steers toward whatever destination
+            // UpdateCursor just set, and updates every weapon's projectiles
+            // by one frame, so a shot fired this frame should already be
+            // queued up before that loop runs.
             UpdateCursor(gameTime, gamePadState);
-            UpdateSteering(gameTime);
             UpdateGamePad(gamePadState);
             UpdateKeyboard(gameTime);
 
-            Position = Physics.ClampToBounds(Position, m_ViewportRect, Width / 2, Height / 2);
-
-            m_BoundingRect.X = (int)Position.X - (int)Origin.X;
-            m_BoundingRect.Y = (int)Position.Y - (int)Origin.Y;
-
-            foreach (WeaponSlot slot in m_WeaponSlots)
-            {
-                slot.Weapon.Update(gameTime, m_ViewportRect);
-            }
+            base.Update(gameTime);
         }
 
         // Point-to-move targeting: the mouse and the gamepad's left stick
@@ -191,111 +145,15 @@ namespace Ark
 
             if (mouseState.LeftButton == ButtonState.Pressed && m_PreviousMouseState.LeftButton == ButtonState.Released)
             {
-                m_Destination = m_Cursor;
+                SetDestination(m_Cursor);
             }
 
             if (gamePadState.IsButtonDown(Buttons.A) && m_PreviousGamePadState.IsButtonUp(Buttons.A))
             {
-                m_Destination = m_Cursor;
+                SetDestination(m_Cursor);
             }
 
             m_PreviousMouseState = mouseState;
-        }
-
-        // Ship-like steering toward m_Destination, with rotation and thrust
-        // mutually exclusive -- the ship never turns while it still has
-        // meaningful velocity, and never thrusts until it's pointed the
-        // right way (within PlayerHeadingToleranceDegrees). Redirecting
-        // mid-flight to a new destination therefore plays out in three
-        // phases every real vessel goes through: brake off the old
-        // heading's velocity, rotate in place once nearly stopped, then
-        // accelerate along the new heading. This is a standard pattern for
-        // non-arcade ship autopilots (e.g. EVE Online's align-then-approach
-        // behavior) -- not a strafing Asteroids-style ship that can thrust
-        // in any direction regardless of facing.
-        private void UpdateSteering(GameTime gameTime)
-        {
-            float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
-
-            Vector2 toDestination = m_Destination - Position;
-            float distance = toDestination.Length();
-
-            if (distance <= GameVariables.PlayerArrivalRadius)
-            {
-                // Arrived -- nothing left to point at, just coast to a stop.
-                SpoolDown(deltaTime);
-            }
-            else
-            {
-                float desiredHeading = toDestination.ToAngle();
-                float wrappedDiff = MathHelper.WrapAngle(desiredHeading - Rotation);
-                float toleranceRadians = MathHelper.ToRadians(GameVariables.PlayerHeadingToleranceDegrees);
-
-                if (Math.Abs(wrappedDiff) > toleranceRadians)
-                {
-                    // Not pointed the right way. Only start turning once
-                    // any existing velocity has bled off below the braking
-                    // threshold -- otherwise keep braking instead.
-                    bool isStopped = m_Velocity.LengthSquared() <=
-                        GameVariables.PlayerBrakingSpeedThreshold * GameVariables.PlayerBrakingSpeedThreshold;
-
-                    if (isStopped)
-                    {
-                        float maxTurn = MathHelper.ToRadians(GameVariables.PlayerTurnRateDegrees) * deltaTime;
-                        float turnDelta = MathHelper.Clamp(wrappedDiff, -maxTurn, maxTurn);
-
-                        Rotation = MathHelper.WrapAngle(Rotation + turnDelta);
-                    }
-
-                    SpoolDown(deltaTime);
-                }
-                else
-                {
-                    // Heading matches -- clear to thrust straight ahead.
-                    // Arrive behavior (speedFactor) bleeds the speed target
-                    // down near the destination so it settles in instead of
-                    // overshooting.
-                    m_EnginePower = MathHelper.Min(m_EnginePower + deltaTime / GameVariables.PlayerEngineSpoolUpTime, 1f);
-
-                    float speedFactor = MathHelper.Clamp(distance / GameVariables.PlayerSlowRadius, 0f, 1f);
-                    Vector2 forward = new Vector2((float)Math.Cos(Rotation), (float)Math.Sin(Rotation));
-
-                    Steer(forward * GameVariables.PlayerSpeed * speedFactor * m_EnginePower, deltaTime);
-                }
-            }
-
-            Position += m_Velocity * deltaTime;
-        }
-
-        // Shared by both the "arrived" and "not pointed the right way"
-        // cases in UpdateSteering -- brakes toward a stop and lets the
-        // engine spool back down toward idle.
-        private void SpoolDown(float deltaTime)
-        {
-            Brake(deltaTime);
-            m_EnginePower = MathHelper.Max(m_EnginePower - deltaTime / GameVariables.PlayerEngineSpoolUpTime, 0f);
-        }
-
-        private void Brake(float deltaTime)
-        {
-            Steer(Vector2.Zero, deltaTime);
-        }
-
-        // Eases m_Velocity toward desiredVelocity at a rate capped by
-        // PlayerAcceleration -- shared by both thrust (desiredVelocity
-        // along the current heading) and braking (desiredVelocity = zero).
-        private void Steer(Vector2 desiredVelocity, float deltaTime)
-        {
-            Vector2 steering = desiredVelocity - m_Velocity;
-            float maxAccel = GameVariables.PlayerAcceleration * deltaTime;
-
-            if (steering.Length() > maxAccel)
-            {
-                steering.Normalize();
-                steering *= maxAccel;
-            }
-
-            m_Velocity += steering;
         }
 
         private void UpdateGamePad(GamePadState gamePadState)
@@ -339,40 +197,6 @@ namespace Ark
         private bool IsNewKeyPress(KeyboardState keyboardState, Keys key)
         {
             return keyboardState.IsKeyDown(key) && m_PreviousKeyboardState.IsKeyUp(key);
-        }
-
-        #endregion
-
-        #region Helper Methods
-
-        private void PutInStartPosition()
-        {
-            Position = new Vector2(m_Viewport.Width / 2, m_Viewport.Height - Height);
-        }
-
-        #endregion
-
-        #region Draw
-
-        public override void Draw(SpriteBatch spriteBatch)
-        {
-            if (IsAlive)
-            {
-                // The ship's art is drawn nose-up (SpriteBatch's rotation=0
-                // faces north), but Rotation itself is computed via
-                // Vector2.ToAngle()/atan2 (0 = east) to stay consistent with
-                // the forward-vector math in UpdateSteering -- reconciled
-                // here, the one place both conventions meet, so the
-                // rendered heading matches the ship's actual direction of
-                // travel instead of sitting 90 degrees off from it.
-                spriteBatch.DrawSafe(Texture, Position, null, Color.White, Rotation + MathHelper.PiOver2,
-                    Origin, Scale, SpriteEffects.None, Depth);
-
-                foreach (WeaponSlot slot in m_WeaponSlots)
-                {
-                    slot.Weapon.Draw(spriteBatch);
-                }
-            }
         }
 
         #endregion
