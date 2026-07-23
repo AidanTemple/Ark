@@ -17,12 +17,6 @@ namespace Ark
         private KeyboardState m_PreviousKeyboardState;
         private MouseState m_PreviousMouseState;
 
-        // Which weapon slot Space fires -- the gamepad has 3 independent
-        // triggers (B/X/Y), but the keyboard only has one fire key, so 1/2/3
-        // pick which slot Space targets. Index order matches the slot list
-        // below (Laser/Railgun/GravityBomb).
-        private int m_SelectedWeaponIndex;
-
         // Point-to-move helm control: a shared on-screen reticle steered by
         // either the mouse or the gamepad's left stick; a click/A-press
         // locks its current position in as the ship's destination (see
@@ -36,6 +30,14 @@ namespace Ark
         // Named Index, not PlayerIndex, so it doesn't shadow the
         // PlayerIndex enum type within this class.
         public PlayerIndex Index { get; private set; }
+
+        // Which weapon slot Space fires -- the gamepad has 3 independent
+        // triggers (B/X/Y), but the keyboard only has one fire key, so 1/2/3
+        // pick which slot Space targets. Index order matches m_WeaponSlots
+        // (and Ship.Weapons, since the constructor adds them in the same
+        // order) -- Laser/Railgun/GravityBomb. Public so the HUD can show
+        // which weapon 1/2/3 last selected.
+        public int SelectedWeaponIndex { get; private set; }
 
         #endregion
 
@@ -182,20 +184,20 @@ namespace Ark
 
             if (IsNewKeyPress(keyboardState, Keys.D1))
             {
-                m_SelectedWeaponIndex = 0;
+                SelectedWeaponIndex = 0;
             }
             else if (IsNewKeyPress(keyboardState, Keys.D2))
             {
-                m_SelectedWeaponIndex = 1;
+                SelectedWeaponIndex = 1;
             }
             else if (IsNewKeyPress(keyboardState, Keys.D3))
             {
-                m_SelectedWeaponIndex = 2;
+                SelectedWeaponIndex = 2;
             }
 
             if (IsNewKeyPress(keyboardState, Keys.Space))
             {
-                m_WeaponSlots[m_SelectedWeaponIndex].Weapon.TryFire(Position, Capacitor);
+                m_WeaponSlots[SelectedWeaponIndex].Weapon.TryFire(Position, Capacitor);
             }
 
             m_PreviousKeyboardState = keyboardState;

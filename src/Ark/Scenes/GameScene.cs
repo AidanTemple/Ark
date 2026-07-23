@@ -126,11 +126,18 @@ namespace Ark
             DrawHudLine(spriteBatch, $"CAPACITOR: {player.CapacitorPercent:0}%", ref position);
             DrawHudLine(spriteBatch, $"PROPULSION: x{player.PropulsionSpeedMultiplier:0.00}", ref position);
 
-            foreach (Weapon weapon in player.Weapons)
+            for (int i = 0; i < player.Weapons.Count; i++)
             {
+                Weapon weapon = player.Weapons[i];
                 string status = weapon.IsCharging ? "CHARGING" : (weapon.IsReady ? "READY" : "COOLDOWN");
 
-                DrawHudLine(spriteBatch, $"{weapon.Name.ToUpperInvariant()}: {status}", ref position);
+                // Keyboard fire (Space) always targets whichever slot 1/2/3
+                // last selected -- marked here so pressing 1/2/3 has some
+                // visible effect even before Space/a gamepad trigger
+                // actually fires anything.
+                string selected = i == player.SelectedWeaponIndex ? " [SELECTED]" : "";
+
+                DrawHudLine(spriteBatch, $"{weapon.Name.ToUpperInvariant()}: {status}{selected}", ref position);
             }
         }
 
