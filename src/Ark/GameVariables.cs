@@ -28,19 +28,21 @@ namespace Ark
 
         public static float PlayerTurnRateDegrees = 90f;
 
-        // Thrust always fires along the ship's current heading (see
-        // Player.UpdateSteering), not straight at the destination -- this
-        // controls how briskly it can build up to (and brake back down
-        // from) PlayerSpeed along that heading.
+        // Rotation and thrust are mutually exclusive (see
+        // Player.UpdateSteering) -- the ship only turns once its velocity
+        // has bled below this speed, and only thrusts once its heading is
+        // within this many degrees of the destination.
+        public static float PlayerBrakingSpeedThreshold = 4f;
+        public static float PlayerHeadingToleranceDegrees = 2f;
+
+        // Shared accel/decel rate: how briskly the ship can brake toward a
+        // stop, or build up to (and bleed back down from) PlayerSpeed once
+        // pointed the right way.
         public static float PlayerAcceleration = 90f;
 
         // Seconds for engine power to ramp from 0 to full, and back down
         // again once thrust is no longer commanded -- the "spool up" delay
         // before the ship actually starts responding to a new destination.
         public static float PlayerEngineSpoolUpTime = 0.8f;
-
-        // Flat per-frame velocity decay while coasting to a stop at the
-        // destination.
-        public static float PlayerDragFactor = 0.9f;
     }
 }

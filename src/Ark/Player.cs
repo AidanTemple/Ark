@@ -191,15 +191,17 @@ namespace Ark
             m_PreviousMouseState = mouseState;
         }
 
-        // Ship-like steering toward m_Destination: turns to face it at a
-        // limited rate, and thrust always fires along the ship's CURRENT
-        // heading rather than straight at the destination -- so it arcs
-        // into its approach as it turns, like a vessel with a single
-        // forward thruster, instead of crabbing sideways while its nose
-        // catches up to a straight-line velocity. Engine power spools up
-        // gradually rather than snapping to full thrust, and eases back
-        // down as the ship nears arrival so it bleeds off speed like
-        // coasting in space rather than stopping dead.
+        // Ship-like steering toward m_Destination, with rotation and thrust
+        // mutually exclusive -- the ship never turns while it still has
+        // meaningful velocity, and never thrusts until it's pointed the
+        // right way (within PlayerHeadingToleranceDegrees). Redirecting
+        // mid-flight to a new destination therefore plays out in three
+        // phases every real vessel goes through: brake off the old
+        // heading's velocity, rotate in place once nearly stopped, then
+        // accelerate along the new heading. This is a standard pattern for
+        // non-arcade ship autopilots (e.g. EVE Online's align-then-approach
+        // behavior) -- not a strafing Asteroids-style ship that can thrust
+        // in any direction regardless of facing.
         private void UpdateSteering(GameTime gameTime)
         {
             float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -207,56 +209,77 @@ namespace Ark
             Vector2 toDestination = m_Destination - Position;
             float distance = toDestination.Length();
 
-            bool isThrusting = distance > GameVariables.PlayerArrivalRadius;
-
-            if (isThrusting)
-            {
-                float desiredHeading = toDestination.ToAngle();
-                float turnDelta = MathHelper.WrapAngle(desiredHeading - Rotation);
-                float maxTurn = MathHelper.ToRadians(GameVariables.PlayerTurnRateDegrees) * deltaTime;
-
-                Rotation = MathHelper.WrapAngle(Rotation + MathHelper.Clamp(turnDelta, -maxTurn, maxTurn));
-            }
-
-            // Engine power eases toward full (thrusting) or idle (coasting)
-            // instead of snapping -- this is the "spool up" delay before
-            // the ship actually starts responding to a new destination,
-            // and an equivalent spool-down once thrust is no longer
-            // commanded. Runs every frame (not just while isThrusting) so
-            // it winds back down on arrival too.
-            float targetEnginePower = isThrusting ? 1f : 0f;
             float spoolStep = deltaTime / GameVariables.PlayerEngineSpoolUpTime;
 
-            m_EnginePower += MathHelper.Clamp(targetEnginePower - m_EnginePower, -spoolStep, spoolStep);
-
-            if (isThrusting)
+            if (distance <= GameVariables.PlayerArrivalRadius)
             {
-                // Arrive behavior: ease off the desired speed as it nears
-                // the destination so it bleeds down like coasting in space,
-                // rather than thrusting at full power right up until it
-                // overshoots.
-                float speedFactor = MathHelper.Clamp(distance / GameVariables.PlayerSlowRadius, 0f, 1f);
-
-                Vector2 forward = new Vector2((float)Math.Cos(Rotation), (float)Math.Sin(Rotation));
-                Vector2 desiredVelocity = forward * GameVariables.PlayerSpeed * speedFactor * m_EnginePower;
-
-                Vector2 steering = desiredVelocity - m_Velocity;
-                float maxAccel = GameVariables.PlayerAcceleration * deltaTime;
-
-                if (steering.Length() > maxAccel)
-                {
-                    steering.Normalize();
-                    steering *= maxAccel;
-                }
-
-                m_Velocity += steering;
+                // Arrived -- nothing left to point at, just coast to a stop.
+                Brake(deltaTime);
+                m_EnginePower = MathHelper.Max(m_EnginePower - spoolStep, 0f);
             }
             else
             {
-                m_Velocity *= GameVariables.PlayerDragFactor;
+                float desiredHeading = toDestination.ToAngle();
+                float angleDiff = Math.Abs(MathHelper.WrapAngle(desiredHeading - Rotation));
+                float toleranceRadians = MathHelper.ToRadians(GameVariables.PlayerHeadingToleranceDegrees);
+
+                if (angleDiff > toleranceRadians)
+                {
+                    // Not pointed the right way. Only start turning once
+                    // any existing velocity has bled off below the braking
+                    // threshold -- otherwise keep braking instead.
+                    bool isStopped = m_Velocity.LengthSquared() <=
+                        GameVariables.PlayerBrakingSpeedThreshold * GameVariables.PlayerBrakingSpeedThreshold;
+
+                    if (isStopped)
+                    {
+                        float maxTurn = MathHelper.ToRadians(GameVariables.PlayerTurnRateDegrees) * deltaTime;
+                        float turnDelta = MathHelper.Clamp(MathHelper.WrapAngle(desiredHeading - Rotation), -maxTurn, maxTurn);
+
+                        Rotation = MathHelper.WrapAngle(Rotation + turnDelta);
+                    }
+
+                    Brake(deltaTime);
+                    m_EnginePower = MathHelper.Max(m_EnginePower - spoolStep, 0f);
+                }
+                else
+                {
+                    // Heading matches -- clear to thrust straight ahead.
+                    // Arrive behavior (speedFactor) bleeds the speed target
+                    // down near the destination so it settles in instead of
+                    // overshooting.
+                    m_EnginePower = MathHelper.Min(m_EnginePower + spoolStep, 1f);
+
+                    float speedFactor = MathHelper.Clamp(distance / GameVariables.PlayerSlowRadius, 0f, 1f);
+                    Vector2 forward = new Vector2((float)Math.Cos(Rotation), (float)Math.Sin(Rotation));
+
+                    Steer(forward * GameVariables.PlayerSpeed * speedFactor * m_EnginePower, deltaTime);
+                }
             }
 
             Position += m_Velocity * deltaTime;
+        }
+
+        private void Brake(float deltaTime)
+        {
+            Steer(Vector2.Zero, deltaTime);
+        }
+
+        // Eases m_Velocity toward desiredVelocity at a rate capped by
+        // PlayerAcceleration -- shared by both thrust (desiredVelocity
+        // along the current heading) and braking (desiredVelocity = zero).
+        private void Steer(Vector2 desiredVelocity, float deltaTime)
+        {
+            Vector2 steering = desiredVelocity - m_Velocity;
+            float maxAccel = GameVariables.PlayerAcceleration * deltaTime;
+
+            if (steering.Length() > maxAccel)
+            {
+                steering.Normalize();
+                steering *= maxAccel;
+            }
+
+            m_Velocity += steering;
         }
 
         private void UpdateGamePad(GameTime gameTime)
