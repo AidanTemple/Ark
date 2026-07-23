@@ -70,6 +70,25 @@ namespace Ark
             get { return m_CapacitorModule != null ? m_CapacitorModule.Percent : 0f; }
         }
 
+        // 0 (no ArmorModule fitted) if this ship has no armor slot filled.
+        public float ArmorDamageReduction
+        {
+            get { return m_ArmorModule != null ? m_ArmorModule.DamageReduction : 0f; }
+        }
+
+        // 1 (no bonus) if this ship has no PropulsionModule fitted.
+        public float PropulsionSpeedMultiplier
+        {
+            get { return m_PropulsionModule != null ? m_PropulsionModule.SpeedMultiplier : 1f; }
+        }
+
+        // Read-only view for HUD/UI purposes -- m_Weapons itself stays
+        // protected so only this ship (or a subclass) can add to it.
+        public IReadOnlyList<Weapon> Weapons
+        {
+            get { return m_Weapons; }
+        }
+
         // Exposed so a subclass can pass its ship's capacitor into
         // Weapon.TryFire -- null if this ship has no capacitor fitted, in
         // which case capacitor-costed weapons simply can't fire (see

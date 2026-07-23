@@ -96,12 +96,48 @@ namespace Ark
                 player.Draw(SceneManager.SpriteBatch);
             }
 
+            DrawHud(spriteBatch);
+
             spriteBatch.End();
 
             if (TransitionPosition > 0)
             {
                 SceneManager.FadeBackBufferToBlack(1.0f - TransitionAlpha);
             }
+        }
+
+        // Basic real-time readout of the player's systems and their current
+        // usage, top-left corner -- HUD-only, so it's tied to m_Players[0]
+        // like other UI-only code in this file rather than looping every
+        // player.
+        private void DrawHud(SpriteBatch spriteBatch)
+        {
+            if (ContentManager.HudFont == null || m_Players.Count == 0)
+            {
+                return;
+            }
+
+            Player player = m_Players[0];
+            Vector2 position = new Vector2(10, 10);
+
+            DrawHudLine(spriteBatch, $"HEALTH: {player.Health:0}", ref position);
+            DrawHudLine(spriteBatch, $"SHIELD: {player.ShieldPercent:0}%", ref position);
+            DrawHudLine(spriteBatch, $"ARMOR: {player.ArmorDamageReduction:0}", ref position);
+            DrawHudLine(spriteBatch, $"CAPACITOR: {player.CapacitorPercent:0}%", ref position);
+            DrawHudLine(spriteBatch, $"PROPULSION: x{player.PropulsionSpeedMultiplier:0.00}", ref position);
+
+            foreach (Weapon weapon in player.Weapons)
+            {
+                string status = weapon.IsCharging ? "CHARGING" : (weapon.IsReady ? "READY" : "COOLDOWN");
+
+                DrawHudLine(spriteBatch, $"{weapon.Name.ToUpperInvariant()}: {status}", ref position);
+            }
+        }
+
+        private void DrawHudLine(SpriteBatch spriteBatch, string text, ref Vector2 position)
+        {
+            spriteBatch.DrawString(ContentManager.HudFont, text, position, Color.White);
+            position.Y += ContentManager.HudFont.LineSpacing;
         }
 
         #endregion

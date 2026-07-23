@@ -29,6 +29,11 @@ namespace Ark
 
         #region Properties
 
+        public override string Name
+        {
+            get { return "Laser"; }
+        }
+
         protected override Vector2 LaunchVelocity
         {
             get { return new Vector2(0, GameVariables.LaserWeaponVelocityY); }

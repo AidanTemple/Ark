@@ -24,6 +24,22 @@ namespace Ark
 
         #region Properties
 
+        // Short display name for HUD/UI purposes.
+        public abstract string Name { get; }
+
+        public bool IsCharging
+        {
+            get { return m_IsCharging; }
+        }
+
+        // Off cooldown, not already charging -- i.e. a TryFire call right
+        // now would only be turned away by insufficient capacitor, not by
+        // timing.
+        public bool IsReady
+        {
+            get { return !m_IsCharging && m_FireTimer >= m_FireInterval; }
+        }
+
         protected abstract Vector2 LaunchVelocity { get; }
 
         // Most projectiles are pure straight-line shots, so leaving the

@@ -49,12 +49,19 @@ namespace Ark
         public static Texture2D Torpedo { get; private set; }
         public static Texture2D Pulse { get; private set; }
 
+        // Only remaining font asset left on disk after the earlier HUD/
+        // wave-counter cleanup deleted the others -- reused here for the
+        // new systems HUD rather than adding a redundant new asset.
+        public static SpriteFont HudFont { get; private set; }
+
         public static void LoadGame(Microsoft.Xna.Framework.Content.ContentManager content)
         {
             Player          = TryLoad<Texture2D>(content, "Textures/Player");
             Missile         = TryLoad<Texture2D>(content, "Textures/Missile");
             Torpedo         = TryLoad<Texture2D>(content, "Textures/Torpedo");
             Pulse           = TryLoad<Texture2D>(content, "Textures/Pulse");
+
+            HudFont         = TryLoad<SpriteFont>(content, "Fonts/menu");
         }
 
         public static void UnloadGame()
@@ -63,6 +70,8 @@ namespace Ark
             Missile = null;
             Torpedo = null;
             Pulse = null;
+
+            HudFont = null;
         }
 
         #endregion
