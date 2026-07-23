@@ -46,9 +46,17 @@ namespace Ark
         public static float WaypointMarkerSize = 6f;
 
         // Arrive behavior: steering/turning stops inside ShipArrivalRadius;
-        // deceleration ramps in starting at ShipSlowRadius.
-        public static float ShipArrivalRadius = 6f;
-        public static float ShipSlowRadius = 100f;
+        // deceleration ramps in starting at ShipSlowRadius. The approach
+        // inside SlowRadius decays roughly exponentially toward zero speed
+        // (desired speed is proportional to remaining distance), with time
+        // constant SlowRadius / ShipSpeed -- kept at the same ~1.67s the
+        // pair (100, 6) gave against the original ShipSpeed of 60, just
+        // rescaled to the current, much lower ShipSpeed. Left at the old
+        // absolute values, the crawl through the last stretch before
+        // ArrivalRadius takes tens of seconds, which reads as the ship
+        // having stopped dead rather than smoothly finishing its approach.
+        public static float ShipArrivalRadius = 8f;
+        public static float ShipSlowRadius = 25f;
 
         public static float ShipTurnRateDegrees = 90f;
 

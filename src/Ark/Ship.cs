@@ -40,8 +40,9 @@ namespace Ark
 
         private Rectangle m_BoundingRect;
 
-        // One of each fitted per slot -- null means that slot is empty.
-        // See the Create*Module factory methods below.
+        // One of each fitted per slot. Shield/armor are optional -- null
+        // means that slot is empty; capacitor/propulsion are required and
+        // never null. See the Create*Module factory methods below.
         private ShieldModule m_ShieldModule;
         private ArmorModule m_ArmorModule;
         private CapacitorModule m_CapacitorModule;
@@ -191,13 +192,17 @@ namespace Ark
             Position = new Vector2(m_ViewportRect.Width / 2, m_ViewportRect.Height - Height);
         }
 
-        // Empty (unfitted) by default -- override to fit a module of that
-        // category. A ship type with no shield slot at all, for example,
-        // simply doesn't override CreateShieldModule.
+        // Shield and armor are optional -- empty (unfitted) by default,
+        // override to fit one. A ship type with no shield slot at all, for
+        // example, simply doesn't override CreateShieldModule.
         protected virtual ShieldModule CreateShieldModule() => null;
         protected virtual ArmorModule CreateArmorModule() => null;
-        protected virtual CapacitorModule CreateCapacitorModule() => null;
-        protected virtual PropulsionModule CreatePropulsionModule() => null;
+
+        // Capacitor and propulsion are the only two required slots -- every
+        // ship needs power to spend and a way to move, so these have no
+        // unfitted default and every concrete Ship must fit one of each.
+        protected abstract CapacitorModule CreateCapacitorModule();
+        protected abstract PropulsionModule CreatePropulsionModule();
 
         #endregion
 
