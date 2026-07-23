@@ -43,9 +43,12 @@ namespace Ark
             // there's no visual feedback at all for where a click will land.
             IsMouseVisible = true;
 
-            // Capped at 30fps; EnemySpeed, PlayerSpeed, wave timing, etc. were
-            // tuned around this tick rate -- revisit together if raising it.
-            TargetElapsedTime = TimeSpan.FromTicks(333333);
+            // Locked to 60fps so gameplay calculations are consistent
+            // regardless of framerate -- every timer/movement in the
+            // codebase is deltaTime-scaled (seconds- or px/sec-based), not
+            // per-frame, so raising/lowering this doesn't itself require
+            // retuning GameVariables.
+            TargetElapsedTime = TimeSpan.FromTicks(166667);
 
             // Extend battery life under lock
             InactiveSleepTime = TimeSpan.FromSeconds(1);

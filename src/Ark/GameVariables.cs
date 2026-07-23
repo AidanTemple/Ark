@@ -5,14 +5,18 @@ namespace Ark
         public static float PlayerSpeed = 60.0f;
 
         // Player weapons
+        // VelocityY values are px/sec (Projectile.Update is deltaTime-scaled)
+        // -- kept at their original on-screen speed, just converted from the
+        // old implicit px/frame-at-30fps units (multiplied by 30) now that
+        // the game runs at a locked 60fps. See Main.cs.
         public static float LaserWeaponFireInterval = 0.15f;
-        public static float LaserWeaponVelocityY = -10f;
+        public static float LaserWeaponVelocityY = -300f;
 
         public static float RailgunFireInterval = 0.6f;
-        public static float RailgunVelocityY = -16f;
+        public static float RailgunVelocityY = -480f;
 
         public static float GravityBombFireInterval = 2.0f;
-        public static float GravityBombVelocityY = -6f;
+        public static float GravityBombVelocityY = -180f;
         public static float GravityBombFlightDuration = 0.6f;
         public static float GravityBombPullDuration = 1.2f;
 

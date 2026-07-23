@@ -53,7 +53,11 @@ namespace Ark
 
         public override void Update(GameTime gameTime)
         {
-            Position += Velocity;
+            // deltaTime-scaled (Velocity is px/sec) so travel speed doesn't
+            // change with the target framerate -- see Main.cs.
+            float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+            Position += Velocity * deltaTime;
 
             RecomputeBoundingRect();
         }
